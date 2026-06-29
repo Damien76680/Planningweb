@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Planning</title>
+</head>
+<body>
+
+<h1>Planning</h1>
+
+<input id="nom" placeholder="Nom tâche">
+<input id="duree" placeholder="Durée">
+<button onclick="addTask()">Ajouter</button>
+
+<ul id="liste"></ul>
+
+<script>
+const API = "https://ton-app.onrender.com";
+
+// charger les tâches
+function loadTasks() {
+    fetch(API + "/tasks")
+        .then(res => res.json())
+        .then(data => {
+            const liste = document.getElementById("liste");
+            liste.innerHTML = "";
+
+            data.forEach((t, i) => {
+                const li = document.createElement("li");
+                li.innerHTML = `${t.nom} (${t.duree}h)
+                <button onclick="deleteTask(${i})">X</button>`;
+                liste.appendChild(li);
+            });
+        });
+}
+
+// ajouter
+function addTask() {
+    fetch(API + "/tasks", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nom: document.getElementById("nom").value,
+            duree: parseFloat(document.getElementById("duree").value)
+        })
+    }).then(loadTasks);
+}
+
+// supprimer
+function deleteTask(i) {
+    fetch(API + "/tasks/" + i, {
+        method: "DELETE"
+    }).then(loadTasks);
+}
+
+loadTasks();
+</script>
+
+</body>
+</html>
