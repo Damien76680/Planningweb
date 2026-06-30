@@ -15,19 +15,27 @@ function loadTasks() {
 
         html += `
         <div class="${classe}" draggable="true" data-id="${t.id}">
-          <h2>${t.nom}</h2>
 
-          <p>Début: ${t.debut}</p>
-          <p>Fin: ${t.fin}</p>
-          <p>Deadline: ${t.deadline || "-"}</p>
+          <h3>${t.nom}</h3>
+
+          ${t.etat !== "Terminé" ? `
+            <p>⏱ ${t.duree}h</p>
+            <p>${t.debut} → ${t.fin}</p>
+          ` : `
+            <p style="color:green">✅ Terminée</p>
+          `}
+
+          <p>📅 ${t.deadline || "-"}</p>
 
           ${t.retard ? "<p style='color:red'>⚠️ RETARD</p>" : ""}
 
           <div>
-            <button onclick="finishTask(${t.id})">✅ Terminé</button>
+            ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
             <button onclick="deleteTask(${t.id})">🗑</button>
           </div>
-        </div>`;
+
+        </div>
+        `;
       });
 
       document.getElementById("tasks").innerHTML = html;
@@ -37,7 +45,7 @@ function loadTasks() {
 }
 
 
-// ✅ terminer
+// TERMINER
 function finishTask(id) {
   fetch(`/api/tasks/${id}/done`, {
     method: "POST"
@@ -45,7 +53,7 @@ function finishTask(id) {
 }
 
 
-// ✅ supprimer
+// DELETE
 function deleteTask(id) {
   if (!confirm("Supprimer ?")) return;
 
@@ -55,9 +63,8 @@ function deleteTask(id) {
 }
 
 
-// ✅ ajout
+// AJOUT
 function addTask() {
-
   const nom = document.getElementById("nom").value;
   const duree = parseFloat(document.getElementById("duree").value);
   const dl = document.getElementById("deadline").value;
@@ -80,7 +87,7 @@ function addTask() {
 }
 
 
-// ✅ drag & drop
+// DRAG & DROP
 function enableDrag() {
   const items = document.querySelectorAll(".task");
 
