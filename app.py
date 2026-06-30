@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify, request
 from models import db, Task
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from utils import *
+from utils import next_work_time, add_hours, DEFAULT_CONFIG
 
 app = Flask(__name__)
 
@@ -14,6 +14,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
@@ -23,6 +24,7 @@ def index():
     return render_template("index.html")
 
 
+# ---------------- GET TASKS ----------------
 @app.route("/api/tasks")
 def get_tasks():
 
@@ -38,28 +40,24 @@ def get_tasks():
 
         start_time = next_work_time(current, DEFAULT_CONFIG)
 
-        if restant <= 0:
-            end_time = start_time
-        else:
+        if restant > 0:
             end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
+        else:
+            end_time = start_time
 
-        # ✅ DEADLINE FIX DEFINITIVE
+        # ✅ DEADLINE SIMPLE ET FIABLE
         deadline_display = "-"
         retard = False
 
         if t.deadline:
             try:
-                print("DEBUG deadline DB:", t.deadline)
-
                 dl = datetime.fromisoformat(t.deadline)
-
                 deadline_display = dl.strftime("%d/%m")
 
                 if end_time > dl:
                     retard = True
 
-            except Exception as e:
-                print("Erreur parsing deadline:", e)
+            except:
                 deadline_display = "-"
 
         result.append({
@@ -79,26 +77,24 @@ def get_tasks():
     return jsonify(result)
 
 
-# ✅ AJOUT
+# ---------------- ADD ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
+
     data = request.json
 
     nom = data.get("nom")
     duree = data.get("duree")
     deadline = data.get("deadline")
 
-    print("DEBUG reception deadline:", deadline)
-
     if not nom or not duree:
         return {"error": "Invalid data"}, 400
 
-    # ✅ validation timeline ISO
+    # ✅ validation deadline
     if deadline:
         try:
             datetime.fromisoformat(deadline)
         except:
-            print("deadline invalide, ignorée")
             deadline = None
     else:
         deadline = None
@@ -119,27 +115,34 @@ def add_task():
     return {"success": True}
 
 
-# ✅ TERMINER
+# ---------------- DONE ----------------
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
+
     t = Task.query.get_or_404(id)
     t.etat = "Terminé"
+
     db.session.commit()
+
     return {"success": True}
 
 
-# ✅ DELETE
+# ---------------- DELETE ----------------
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
+
     t = Task.query.get_or_404(id)
+
     db.session.delete(t)
     db.session.commit()
+
     return {"success": True}
 
 
-# ✅ REORDER
+# ---------------- REORDER ----------------
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
+
     ids = request.json
 
     for index, task_id in enumerate(ids):
@@ -148,5 +151,5 @@ def reorder_tasks():
             t.ordre = index
 
     db.session.commit()
+
     return {"success": True}
-``
