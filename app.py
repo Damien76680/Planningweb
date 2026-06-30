@@ -210,4 +210,3 @@ def reorder_tasks():
 
     db.session.commit()
     return {"success": True}
-``
