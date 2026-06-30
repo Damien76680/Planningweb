@@ -14,7 +14,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# ✅ heure France
+# ✅ Heure FR
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
@@ -28,52 +28,51 @@ def index():
 # ---------------- API ----------------
 @app.route("/api/tasks")
 def get_tasks():
+
     tasks = Task.query.order_by(Task.ordre).all()
 
     now = now_paris()
     current = now
     result = []
 
-    first_todo_done = False
+    first_todo_found = False
 
     for t in tasks:
 
-        # ✅ CALCUL TEMPS EN COURS (SANS TOUCHER start_time)
+        # ---------------- UPDATE TEMPS EN COURS ----------------
         if t.etat == "En cours" and t.start_time:
             start = datetime.fromisoformat(t.start_time)
+
             delta = work_time_between(start, now, DEFAULT_CONFIG)
 
             if delta > 0:
-                t.temps_fait += delta
+                # ✅ accumulation sécurisée (pas de dépassement)
+                t.temps_fait = min(t.duree, t.temps_fait + delta)
 
-                # ⚠️ ON NE MODIFIE PLUS start_time
-                # t.start_time = now.isoformat() ❌ SUPPRIMÉ
+                # ✅ ON NE TOUCHE PAS start_time
 
                 if t.temps_fait >= t.duree:
                     t.etat = "Terminé"
                     t.start_time = None
 
-        # ---------------- DÉBUT ----------------
-
+        # ---------------- CALCUL DÉBUT ----------------
         if t.etat == "En cours" and t.start_time:
-            # ✅ début réel figé
             start_time = datetime.fromisoformat(t.start_time)
 
         elif t.etat == "À faire":
 
-            if not first_todo_done:
-                # ✅ première tâche → démarre maintenant
+            # ✅ première tâche non terminée → part de maintenant
+            if not first_todo_found:
                 start_time = next_work_time(now, DEFAULT_CONFIG)
-                first_todo_done = True
+                first_todo_found = True
             else:
-                # ✅ suivantes → enchaînement
                 start_time = next_work_time(current, DEFAULT_CONFIG)
 
         else:
+            # Terminé ou autre
             start_time = next_work_time(current, DEFAULT_CONFIG)
 
         # ---------------- TEMPS RESTANT ----------------
-
         temps_base = t.duree
 
         if t.temps_fait > t.duree:
@@ -84,15 +83,13 @@ def get_tasks():
 
         restant = max(0, temps_base - t.temps_fait)
 
-        # ---------------- FIN ----------------
-
+        # ---------------- CALCUL FIN ----------------
         if restant <= 0:
             end_time = start_time
         else:
             end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
         # ---------------- DEADLINE ----------------
-
         retard = False
         deadline_display = ""
 
@@ -103,8 +100,7 @@ def get_tasks():
             if end_time > dl:
                 retard = True
 
-        # ---------------- JSON ----------------
-
+        # ---------------- RESULT ----------------
         result.append({
             "id": t.id,
             "nom": t.nom,
@@ -117,13 +113,11 @@ def get_tasks():
             "retard": retard
         })
 
-        # ---------------- CHAÎNE ----------------
-
+        # ---------------- CHAÎNE PLANNING ----------------
         if t.etat in ["À faire", "En cours"]:
             current = end_time
 
     db.session.commit()
-
     return jsonify(result)
 
 
@@ -160,7 +154,7 @@ def update_status(id):
     t.etat = data["etat"]
 
     if data["etat"] == "En cours":
-        # ✅ fixé une seule fois
+        # ✅ on fixe UNE fois
         if not t.start_time:
             t.start_time = now_paris().isoformat()
 
