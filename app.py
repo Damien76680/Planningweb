@@ -53,22 +53,28 @@ def get_tasks():
         else:
             end_time = start_time
 
-        # ✅ DEADLINE CORRIGÉE (IMPORTANT)
+deadline_display = "-"
+retard = False
+
+if t.deadline:
+
+    try:
+        dl_str = str(t.deadline)
+
+        # ✅ supprime timezone si présente (ultra important)
+        if "+" in dl_str:
+            dl_str = dl_str.split("+")[0]
+
+        dl = datetime.fromisoformat(dl_str)
+
+        deadline_display = dl.strftime("%d/%m")
+
+        if end_time > dl:
+            retard = True
+
+    except Exception as e:
+        print("ERREUR DEADLINE :", t.deadline, e)
         deadline_display = "-"
-        retard = False
-
-        if t.deadline is not None and t.deadline != "":
-            try:
-                dl = datetime.fromisoformat(t.deadline)
-
-                deadline_display = dl.strftime("%d/%m")
-
-                if end_time > dl:
-                    retard = True
-
-            except Exception as e:
-                print("Erreur deadline:", t.deadline, e)
-                deadline_display = "-"
 
         result.append({
             "id": t.id,
