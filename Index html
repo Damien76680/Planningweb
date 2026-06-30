@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Planning</title>
+
+  <style>
+    body { font-family: Arial; font-size: 18px; }
+
+    .task {
+      margin: 10px;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .encours { background: #cce5ff; }
+    .termine { background: #d4edda; }
+    .pause { background: #ffe5b4; }
+    .afaire { background: #eeeeee; }
+
+    .retard {
+      border: 3px solid red;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px;
+      margin: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Planning Atelier</h1>
+
+<input id="nom" placeholder="Nom tâche">
+<input id="duree" placeholder="Durée">
+<input id="deadline" placeholder="JJMMAAAA">
+
+<button onclick="addTask()">Ajouter</button>
+
+<div id="tasks"></div>
+
+/static/app.jsscript>
+
+</body>
+</html>
