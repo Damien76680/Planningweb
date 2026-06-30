@@ -15,7 +15,7 @@ with app.app_context():
     db.create_all()
 
 
-# ✅ Heure France
+# ✅ Heure FR
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
@@ -40,7 +40,7 @@ def get_tasks():
 
     for t in tasks:
 
-        # ---------------- UPDATE TEMPS EN COURS ----------------
+        # ---------------- TEMPS EN COURS ----------------
         if t.etat == "En cours" and t.start_time:
             start = datetime.fromisoformat(t.start_time)
             delta = work_time_between(start, now, DEFAULT_CONFIG)
@@ -52,7 +52,7 @@ def get_tasks():
                     t.etat = "Terminé"
                     t.start_time = None
 
-        # ---------------- CALCUL DU DÉBUT ----------------
+        # ---------------- DEBUT ----------------
         if t.etat == "En cours" and t.start_time:
             start_time = datetime.fromisoformat(t.start_time)
 
@@ -79,25 +79,30 @@ def get_tasks():
         restant = max(0, temps_base - t.temps_fait)
 
         # ---------------- FIN ----------------
-        if restant <= 0:
-            end_time = start_time
-        else:
-            end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
+        end_time = start_time if restant <= 0 else add_hours(start_time, restant, DEFAULT_CONFIG)
 
         # ---------------- DEADLINE SÉCURISÉE ----------------
         retard = False
         deadline_display = ""
 
-        if t.deadline:
+        if t.deadline and isinstance(t.deadline, str):
             try:
-                dl = datetime.fromisoformat(t.deadline)
-                deadline_display = dl.strftime("%d/%m")
+                dl_str = t.deadline.strip()
 
-                if end_time > dl:
-                    retard = True
+                if "T" in dl_str:
+                    dl = datetime.fromisoformat(dl_str)
+
+                    deadline_display = dl.strftime("%d/%m")
+
+                    if end_time > dl:
+                        retard = True
+                else:
+                    deadline_display = ""
+                    t.deadline = None
 
             except Exception:
-                deadline_display = "Erreur date"
+                deadline_display = ""
+                t.deadline = None
                 retard = False
 
         # ---------------- RESULT ----------------
@@ -113,9 +118,17 @@ def get_tasks():
             "retard": retard
         })
 
-        # ---------------- CHAÎNE DU PLANNING ----------------
+        # ---------------- CHAÎNE ----------------
         if t.etat in ["À faire", "En cours"]:
             current = end_time
+
+    # ✅ nettoyage global des deadlines invalides
+    for t in tasks:
+        if t.deadline:
+            try:
+                datetime.fromisoformat(t.deadline)
+            except:
+                t.deadline = None
 
     db.session.commit()
     return jsonify(result)
@@ -130,8 +143,15 @@ def add_task():
         return {"error": "Invalid data"}, 400
 
     deadline = data.get("deadline")
-    if not deadline:
+
+    # ✅ validation format ISO uniquement
+    if not deadline or not isinstance(deadline, str) or "T" not in deadline:
         deadline = None
+    else:
+        try:
+            datetime.fromisoformat(deadline)
+        except:
+            deadline = None
 
     max_order = db.session.query(db.func.max(Task.ordre)).scalar() or 0
 
@@ -190,3 +210,4 @@ def reorder_tasks():
 
     db.session.commit()
     return {"success": True}
+``
