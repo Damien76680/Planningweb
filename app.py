@@ -41,7 +41,15 @@ def get_tasks():
                     t.etat = "Terminé"
                     t.start_time = None
 
-        start_time = next_work_time(current, DEFAULT_CONFIG)
+       if t.etat == "En cours" and t.start_time:
+    start_time = datetime.fromisoformat(t.start_time)
+
+elif t.etat == "À faire":
+    start_time = next_work_time(now, DEFAULT_CONFIG)
+
+else:
+    start_time = next_work_time(current, DEFAULT_CONFIG)
+
 
         temps_base = t.duree
         if t.temps_fait > t.duree:
