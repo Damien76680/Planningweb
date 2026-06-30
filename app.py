@@ -3,18 +3,20 @@ from models import db, Task
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from utils import next_work_time, add_hours, DEFAULT_CONFIG
+import os
 
 app = Flask(__name__)
 
-import os
-
+# ✅ CONFIG BASE (Render + fallback local)
 database_url = os.environ.get("DATABASE_URL")
 
-# ✅ correction Render (important)
-if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
@@ -22,11 +24,12 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-
+# ✅ Heure locale
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
 
+# ---------------- PAGE ----------------
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -53,28 +56,28 @@ def get_tasks():
         else:
             end_time = start_time
 
-deadline_display = "-"
-retard = False
-
-if t.deadline:
-
-    try:
-        dl_str = str(t.deadline)
-
-        # ✅ supprime timezone si présente (ultra important)
-        if "+" in dl_str:
-            dl_str = dl_str.split("+")[0]
-
-        dl = datetime.fromisoformat(dl_str)
-
-        deadline_display = dl.strftime("%d/%m")
-
-        if end_time > dl:
-            retard = True
-
-    except Exception as e:
-        print("ERREUR DEADLINE :", t.deadline, e)
+        # ✅ DEADLINE (ULTRA ROBUSTE)
         deadline_display = "-"
+        retard = False
+
+        if t.deadline:
+            try:
+                dl_str = str(t.deadline)
+
+                # ✅ retire timezone si présent
+                if "+" in dl_str:
+                    dl_str = dl_str.split("+")[0]
+
+                dl = datetime.fromisoformat(dl_str)
+
+                deadline_display = dl.strftime("%d/%m")
+
+                if end_time > dl:
+                    retard = True
+
+            except Exception as e:
+                print("Erreur deadline:", t.deadline, e)
+                deadline_display = "-"
 
         result.append({
             "id": t.id,
@@ -97,25 +100,23 @@ if t.deadline:
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
 
-    data = request.get_json(force=True)  # ✅ IMPORTANT
-
-    print("DATA RECU :", data)
+    data = request.get_json(force=True)
 
     nom = data.get("nom")
     duree = data.get("duree")
     deadline = data.get("deadline")
 
-    print("DEADLINE RECU :", deadline)
+    print("DEBUG deadline reçu:", deadline)
 
     if not nom or not duree:
         return {"error": "Invalid data"}, 400
 
-    # ✅ nettoyage deadline
-    if deadline and isinstance(deadline, str):
+    # ✅ validation deadline
+    if deadline:
         try:
-            datetime.fromisoformat(deadline)
+            datetime.fromisoformat(str(deadline).split("+")[0])
         except:
-            print("Deadline invalide:", deadline)
+            print("Deadline invalide ignorée:", deadline)
             deadline = None
     else:
         deadline = None
@@ -133,11 +134,9 @@ def add_task():
     db.session.add(task)
     db.session.commit()
 
-    print("SAUVEGARDE DEADLINE :", task.deadline)
+    print("DEBUG sauvegarde deadline:", task.deadline)
 
     return {"success": True}
-
-
 
 
 # ---------------- FINISH ----------------
