@@ -23,12 +23,12 @@ with app.app_context():
     db.create_all()
 
 
-# ---------------- UTILS ----------------
+# ---------------- HEURE LOCALE ----------------
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
 
-# ✅ ✅ ✅ MOTEUR DE CALCUL FINAL (horaires + congés)
+# ✅ ✅ ✅ MOTEUR FINAL CORRIGÉ (horaires + congés)
 def add_hours_skip_holidays(start, hours, config, holidays):
 
     def is_holiday(d):
@@ -39,21 +39,14 @@ def add_hours_skip_holidays(start, hours, config, holidays):
 
     while remaining > 0:
 
-        # ✅ se cale dans un créneau valide
-        current = next_work_time(current, config)
-
-        # ✅ skip jour de congé
-        if is_holiday(current):
-            current += timedelta(days=1)
-            continue
-
         weekday = current.strftime("%a").lower()[:3]
         work_hours = config["work_hours"].get(weekday, [])
 
-        valid_slot = False
+        in_slot = False
         next_stop = None
 
         for start_str, end_str in work_hours:
+
             h1, m1 = map(int, start_str.split(":"))
             h2, m2 = map(int, end_str.split(":"))
 
@@ -61,22 +54,27 @@ def add_hours_skip_holidays(start, hours, config, holidays):
             slot_end = current.replace(hour=h2, minute=m2, second=0)
 
             if slot_start <= current < slot_end:
-                valid_slot = True
+                in_slot = True
                 next_stop = slot_end
                 break
 
-        # ❌ hors plage → on avance doucement
-        if not valid_slot:
-            current += timedelta(minutes=30)
+        # ✅ si pas dans une plage → on corrige avec la config
+        if not in_slot:
+            current = next_work_time(current, config)
             continue
 
-        # ✅ temps dispo dans cette plage
+        # ✅ skip congé
+        if is_holiday(current):
+            current += timedelta(days=1)
+            current = next_work_time(current, config)
+            continue
+
         available = (next_stop - current).total_seconds() / 3600
 
         if remaining <= available:
             return current + timedelta(hours=remaining)
 
-        # ✅ on consomme la plage et passe à la suivante
+        # ✅ consommer le créneau
         remaining -= available
         current = next_stop
 
@@ -150,7 +148,7 @@ def get_tasks():
 
     tasks = Task.query.order_by(Task.ordre).all()
 
-    # ✅ CONFIG (toujours valide)
+    # ✅ config sûre
     config = DEFAULT_CONFIG.copy()
 
     settings = Settings.query.first()
@@ -174,18 +172,18 @@ def get_tasks():
 
         start_time = next_work_time(current, config)
 
-        # ✅ skip congés dès le départ
+        # ✅ skip congés au départ
         while start_time.strftime("%Y-%m-%d") in holidays:
             start_time += timedelta(days=1)
             start_time = next_work_time(start_time, config)
 
-        # ✅ ✅ calcul réel
+        # ✅ calcul réel
         if restant > 0:
             end_time = add_hours_skip_holidays(start_time, restant, config, holidays)
         else:
             end_time = start_time
 
-        # ✅ DEADLINE
+        # ✅ deadline
         deadline_display = "-"
         retard = False
 
