@@ -13,12 +13,14 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# UI
+# ---------------- UI ----------------
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# GET tasks
+
+# ---------------- API ----------------
+
 @app.route("/api/tasks")
 def get_tasks():
     tasks = Task.query.order_by(Task.ordre).all()
@@ -29,6 +31,7 @@ def get_tasks():
 
     for t in tasks:
 
+        # ---------------- MAJ TEMPS EN COURS ----------------
         if t.etat == "En cours" and t.start_time:
             start = datetime.fromisoformat(t.start_time)
             delta = work_time_between(start, now, DEFAULT_CONFIG)
@@ -41,35 +44,48 @@ def get_tasks():
                     t.etat = "Terminé"
                     t.start_time = None
 
-       if t.etat == "En cours" and t.start_time:
-    start_time = datetime.fromisoformat(t.start_time)
+        # ---------------- LOGIQUE DE DEBUT ----------------
+        if t.etat == "En cours" and t.start_time:
+            # ✅ début réel figé
+            start_time = datetime.fromisoformat(t.start_time)
 
-elif t.etat == "À faire":
-    start_time = next_work_time(now, DEFAULT_CONFIG)
+        elif t.etat == "À faire":
+            # ✅ glisse avec l'heure actuelle
+            start_time = next_work_time(now, DEFAULT_CONFIG)
 
-else:
-    start_time = next_work_time(current, DEFAULT_CONFIG)
+        else:
+            # ✅ enchaînement normal
+            start_time = next_work_time(current, DEFAULT_CONFIG)
 
-
+        # ---------------- CALCUL TEMPS RESTANT ----------------
         temps_base = t.duree
+
         if t.temps_fait > t.duree:
             temps_base = t.temps_fait
+
         if t.etat == "Terminé":
             temps_base = 0
 
         restant = max(0, temps_base - t.temps_fait)
 
-        end_time = start_time if restant <= 0 else add_hours(start_time, restant, DEFAULT_CONFIG)
+        # ---------------- FIN ----------------
+        if restant <= 0:
+            end_time = start_time
+        else:
+            end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
+        # ---------------- DEADLINE ----------------
         retard = False
         deadline_display = ""
 
         if t.deadline:
             dl = datetime.fromisoformat(t.deadline)
             deadline_display = dl.strftime("%d/%m")
+
             if end_time > dl:
                 retard = True
 
+        # ---------------- JSON ----------------
         result.append({
             "id": t.id,
             "nom": t.nom,
@@ -82,19 +98,21 @@ else:
             "retard": retard
         })
 
+        # ---------------- CHAINE DU PLANNING ----------------
         if t.etat == "En cours":
-    current = end_time  # continue depuis sa vraie base
+            current = end_time
 
-elif t.etat == "À faire":
-    current = end_time
+        elif t.etat == "À faire":
+            current = end_time
 
-# Terminé : on n'influence pas
-
+        # Terminé → ignoré
 
     db.session.commit()
+
     return jsonify(result)
 
-# ADD
+
+# ---------------- AJOUT ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     data = request.json
@@ -117,7 +135,8 @@ def add_task():
 
     return {"success": True}
 
-# STATUS
+
+# ---------------- STATUS ----------------
 @app.route("/api/tasks/<int:id>/status", methods=["POST"])
 def update_status(id):
     t = Task.query.get_or_404(id)
@@ -132,9 +151,11 @@ def update_status(id):
         t.start_time = None
 
     db.session.commit()
+
     return {"success": True}
 
-# DELETE
+
+# ---------------- DELETE ----------------
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
     t = Task.query.get_or_404(id)
@@ -142,7 +163,8 @@ def delete_task(id):
     db.session.commit()
     return {"success": True}
 
-# REORDER
+
+# ---------------- REORDER ----------------
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
     ids = request.json
