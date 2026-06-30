@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from models import db, Task
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from utils import *
 
 app = Flask(__name__)
@@ -13,6 +14,11 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+# ✅ fonction centralisée heure France
+def now_paris():
+    return datetime.now(ZoneInfo("Europe/Paris"))
+
+
 # ---------------- UI ----------------
 @app.route("/")
 def index():
@@ -20,18 +26,17 @@ def index():
 
 
 # ---------------- API ----------------
-
 @app.route("/api/tasks")
 def get_tasks():
     tasks = Task.query.order_by(Task.ordre).all()
 
-    now = datetime.now()
+    now = now_paris()
     current = now
     result = []
 
     for t in tasks:
 
-        # ---------------- MAJ TEMPS EN COURS ----------------
+        # ---------------- UPDATE TEMPS EN COURS ----------------
         if t.etat == "En cours" and t.start_time:
             start = datetime.fromisoformat(t.start_time)
             delta = work_time_between(start, now, DEFAULT_CONFIG)
@@ -44,20 +49,17 @@ def get_tasks():
                     t.etat = "Terminé"
                     t.start_time = None
 
-        # ---------------- LOGIQUE DE DEBUT ----------------
+        # ---------------- GESTION DU DÉBUT ----------------
         if t.etat == "En cours" and t.start_time:
-            # ✅ début réel figé
             start_time = datetime.fromisoformat(t.start_time)
 
         elif t.etat == "À faire":
-            # ✅ glisse avec l'heure actuelle
             start_time = next_work_time(now, DEFAULT_CONFIG)
 
         else:
-            # ✅ enchaînement normal
             start_time = next_work_time(current, DEFAULT_CONFIG)
 
-        # ---------------- CALCUL TEMPS RESTANT ----------------
+        # ---------------- TEMPS RESTANT ----------------
         temps_base = t.duree
 
         if t.temps_fait > t.duree:
@@ -98,17 +100,11 @@ def get_tasks():
             "retard": retard
         })
 
-        # ---------------- CHAINE DU PLANNING ----------------
-        if t.etat == "En cours":
+        # ---------------- CHAÎNE DU PLANNING ----------------
+        if t.etat in ["En cours", "À faire"]:
             current = end_time
-
-        elif t.etat == "À faire":
-            current = end_time
-
-        # Terminé → ignoré
 
     db.session.commit()
-
     return jsonify(result)
 
 
@@ -145,7 +141,7 @@ def update_status(id):
     t.etat = data["etat"]
 
     if data["etat"] == "En cours":
-        t.start_time = datetime.now().isoformat()
+        t.start_time = now_paris().isoformat()
 
     if data["etat"] == "Pause":
         t.start_time = None
