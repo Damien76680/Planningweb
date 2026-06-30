@@ -45,7 +45,7 @@ function loadTasks() {
 }
 
 
-// TERMINER
+// ✅ FINIR
 function finishTask(id) {
   fetch(`/api/tasks/${id}/done`, {
     method: "POST"
@@ -53,7 +53,7 @@ function finishTask(id) {
 }
 
 
-// DELETE
+// ✅ DELETE
 function deleteTask(id) {
   if (!confirm("Supprimer ?")) return;
 
@@ -63,21 +63,30 @@ function deleteTask(id) {
 }
 
 
-// AJOUT
+// ✅ AJOUT DEADLINE CORRIGÉE
 function addTask() {
-  const nom = document.getElementById("nom").value;
+
+  const nom = document.getElementById("nom").value.trim();
   const duree = parseFloat(document.getElementById("duree").value);
-  const dl = document.getElementById("deadline").value;
+  const dl = document.getElementById("deadline").value.trim();
+
+  if (!nom || isNaN(duree)) {
+    alert("Erreur saisie");
+    return;
+  }
 
   let deadline = null;
 
-  if (dl && dl.length === 8) {
-    const day = dl.slice(0,2);
-    const month = dl.slice(2,4);
-    const year = dl.slice(4,8);
+  // ✅ VALIDATION STRICTE JJMMAAAA
+  if (/^\d{8}$/.test(dl)) {
+    const day = dl.substring(0,2);
+    const month = dl.substring(2,4);
+    const year = dl.substring(4,8);
 
     deadline = `${year}-${month}-${day}T00:00:00`;
   }
+
+  console.log("Deadline envoyée :", deadline);
 
   fetch("/api/tasks", {
     method:"POST",
@@ -87,7 +96,7 @@ function addTask() {
 }
 
 
-// DRAG & DROP
+// ✅ DRAG
 function enableDrag() {
   const items = document.querySelectorAll(".task");
 
@@ -120,7 +129,6 @@ function enableDrag() {
     });
   });
 }
-
 
 setInterval(loadTasks, 3000);
 loadTasks();
