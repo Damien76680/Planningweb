@@ -14,19 +14,14 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-
-# ✅ Heure FR
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
-
-# ---------------- UI ----------------
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
-# ---------------- API ----------------
 @app.route("/api/tasks")
 def get_tasks():
 
@@ -36,124 +31,61 @@ def get_tasks():
     current = now
     result = []
 
-    first_todo_found = False
-
     for t in tasks:
 
-        # ---------------- TEMPS EN COURS ----------------
-        if t.etat == "En cours" and t.start_time:
-            start = datetime.fromisoformat(t.start_time)
-            delta = work_time_between(start, now, DEFAULT_CONFIG)
+        # ✅ durée restante simple
+        restant = 0 if t.etat == "Terminé" else t.duree
 
-            if delta > 0:
-                t.temps_fait = min(t.duree, t.temps_fait + delta)
+        # ✅ début planning
+        start_time = next_work_time(current, DEFAULT_CONFIG)
 
-                if t.temps_fait >= t.duree:
-                    t.etat = "Terminé"
-                    t.start_time = None
-
-        # ---------------- DEBUT ----------------
-        if t.etat == "En cours" and t.start_time:
-            start_time = datetime.fromisoformat(t.start_time)
-
-        elif t.etat == "À faire":
-
-            if not first_todo_found:
-                start_time = next_work_time(now, DEFAULT_CONFIG)
-                first_todo_found = True
-            else:
-                start_time = next_work_time(current, DEFAULT_CONFIG)
-
+        # ✅ fin
+        if restant <= 0:
+            end_time = start_time
         else:
-            start_time = next_work_time(current, DEFAULT_CONFIG)
+            end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
-        # ---------------- TEMPS RESTANT ----------------
-        temps_base = t.duree
-
-        if t.temps_fait > t.duree:
-            temps_base = t.temps_fait
-
-        if t.etat == "Terminé":
-            temps_base = 0
-
-        restant = max(0, temps_base - t.temps_fait)
-
-        # ---------------- FIN ----------------
-        end_time = start_time if restant <= 0 else add_hours(start_time, restant, DEFAULT_CONFIG)
-
-        # ---------------- DEADLINE SÉCURISÉE ----------------
+        # ✅ deadline
         retard = False
         deadline_display = ""
 
-        if t.deadline and isinstance(t.deadline, str):
+        if t.deadline:
             try:
-                dl_str = t.deadline.strip()
+                dl = datetime.fromisoformat(t.deadline)
+                deadline_display = dl.strftime("%d/%m")
 
-                if "T" in dl_str:
-                    dl = datetime.fromisoformat(dl_str)
-
-                    deadline_display = dl.strftime("%d/%m")
-
-                    if end_time > dl:
-                        retard = True
-                else:
-                    deadline_display = ""
-                    t.deadline = None
-
-            except Exception:
+                if end_time > dl:
+                    retard = True
+            except:
                 deadline_display = ""
-                t.deadline = None
-                retard = False
 
-        # ---------------- RESULT ----------------
         result.append({
             "id": t.id,
             "nom": t.nom,
             "etat": t.etat,
             "debut": start_time.strftime("%d/%m %H:%M"),
             "fin": end_time.strftime("%d/%m %H:%M"),
-            "fait": round(t.temps_fait, 1),
-            "restant": round(restant, 1),
             "deadline": deadline_display,
             "retard": retard
         })
 
-        # ---------------- CHAÎNE ----------------
-        if t.etat in ["À faire", "En cours"]:
+        if t.etat != "Terminé":
             current = end_time
 
-    # ✅ nettoyage global des deadlines invalides
-    for t in tasks:
-        if t.deadline:
-            try:
-                datetime.fromisoformat(t.deadline)
-            except:
-                t.deadline = None
-
-    db.session.commit()
     return jsonify(result)
 
 
-# ---------------- AJOUT ----------------
+# ✅ AJOUT
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     data = request.json
 
-    if not data.get("nom") or not data.get("duree"):
-        return {"error": "Invalid data"}, 400
+    max_order = db.session.query(db.func.max(Task.ordre)).scalar() or 0
 
     deadline = data.get("deadline")
 
-    # ✅ validation format ISO uniquement
-    if not deadline or not isinstance(deadline, str) or "T" not in deadline:
+    if not deadline or "T" not in deadline:
         deadline = None
-    else:
-        try:
-            datetime.fromisoformat(deadline)
-        except:
-            deadline = None
-
-    max_order = db.session.query(db.func.max(Task.ordre)).scalar() or 0
 
     task = Task(
         nom=data["nom"],
@@ -169,27 +101,19 @@ def add_task():
     return {"success": True}
 
 
-# ---------------- STATUS ----------------
-@app.route("/api/tasks/<int:id>/status", methods=["POST"])
-def update_status(id):
+# ✅ TERMINER
+@app.route("/api/tasks/<int:id>/done", methods=["POST"])
+def finish_task(id):
     t = Task.query.get_or_404(id)
-    data = request.json
 
-    t.etat = data["etat"]
-
-    if data["etat"] == "En cours":
-        if not t.start_time:
-            t.start_time = now_paris().isoformat()
-
-    if data["etat"] == "Pause":
-        t.start_time = None
+    t.etat = "Terminé"
 
     db.session.commit()
 
     return {"success": True}
 
 
-# ---------------- DELETE ----------------
+# ✅ DELETE
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
     t = Task.query.get_or_404(id)
@@ -198,7 +122,7 @@ def delete_task(id):
     return {"success": True}
 
 
-# ---------------- REORDER ----------------
+# ✅ REORDER
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
     ids = request.json
