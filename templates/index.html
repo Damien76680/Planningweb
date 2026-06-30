@@ -2,9 +2,13 @@
 <html>
 <head>
   <title>Planning</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: Arial; margin: 10px; }
+    body {
+      font-family: Arial;
+      margin: 10px;
+    }
 
     .task {
       display: flex;
@@ -14,7 +18,7 @@
       margin: 3px 0;
     }
 
-    /* ✅ colonnes */
+    /* colonnes */
     .col-nom { width: 150px; }
     .col-client { width: 120px; }
     .col-duree { width: 60px; }
@@ -22,7 +26,7 @@
     .col-deadline { width: 120px; }
     .col-actions { width: 180px; }
 
-    /* ✅ ligne rouge retard */
+    /* ligne retard */
     .task.retard {
       background-color: #ff4d4d;
       color: white;
@@ -32,12 +36,19 @@
 
     .task.retard button {
       background-color: white;
+      color: black;
     }
 
-    button { margin: 2px; }
+    button {
+      margin: 2px;
+    }
 
     #settingsForm div {
-      margin: 5px 0;
+      margin: 6px 0;
+    }
+
+    input {
+      margin: 3px;
     }
   </style>
 </head>
@@ -46,65 +57,73 @@
 
 <h2>Planning</h2>
 
+<!-- ✅ AJOUT TACHE -->
 <input id="nom" placeholder="Nom">
 <input id="client" placeholder="Client">
 <input id="duree" placeholder="Durée">
 <input id="deadline" placeholder="JJMMAAAA">
 <button onclick="addTask()">Ajouter</button>
 
-
 <h3>Tâches</h3>
 <div id="tasks"></div>
 
 
+<hr>
+
+<!-- ✅ CONGES -->
 <h3>Congés</h3>
 <input id="holiday" placeholder="JJMMAAAA">
 <button onclick="addHoliday()">Ajouter</button>
 <ul id="holidayList"></ul>
 
 
+<hr>
+
+<!-- ✅ PARAMETRES -->
 <h3>Paramètres horaires</h3>
 
 <div id="settingsForm">
 
-<div>Lundi :
-  <input id="mon1_start" type="time"> -
-  <input id="mon1_end" type="time">
-  <input id="mon2_start" type="time"> -
-  <input id="mon2_end" type="time">
-</div>
+  <div>Lundi :
+    <input id="mon1_start" type="time"> -
+    <input id="mon1_end" type="time">
+    <input id="mon2_start" type="time"> -
+    <input id="mon2_end" type="time">
+  </div>
 
-<div>Mardi :
-  <input id="tue1_start" type="time"> -
-  <input id="tue1_end" type="time">
-  <input id="tue2_start" type="time"> -
-  <input id="tue2_end" type="time">
-</div>
+  <div>Mardi :
+    <input id="tue1_start" type="time"> -
+    <input id="tue1_end" type="time">
+    <input id="tue2_start" type="time"> -
+    <input id="tue2_end" type="time">
+  </div>
 
-<div>Mercredi :
-  <input id="wed1_start" type="time"> -
-  <input id="wed1_end" type="time">
-  <input id="wed2_start" type="time"> -
-  <input id="wed2_end" type="time">
-</div>
+  <div>Mercredi :
+    <input id="wed1_start" type="time"> -
+    <input id="wed1_end" type="time">
+    <input id="wed2_start" type="time"> -
+    <input id="wed2_end" type="time">
+  </div>
 
-<div>Jeudi :
-  <input id="thu1_start" type="time"> -
-  <input id="thu1_end" type="time">
-  <input id="thu2_start" type="time"> -
-  <input id="thu2_end" type="time">
-</div>
+  <div>Jeudi :
+    <input id="thu1_start" type="time"> -
+    <input id="thu1_end" type="time">
+    <input id="thu2_start" type="time"> -
+    <input id="thu2_end" type="time">
+  </div>
 
-<div>Vendredi :
-  <input id="fri1_start" type="time"> -
-  <input id="fri1_end" type="time">
-</div>
+  <div>Vendredi :
+    <input id="fri1_start" type="time"> -
+    <input id="fri1_end" type="time">
+  </div>
 
 </div>
 
 <button onclick="saveSettings()">Sauvegarder</button>
 
-/static/app.jsscript>
+
+<!-- ✅ ✅ ✅ CORRECTION CRITIQUE -->
+<script src="/static/app.js"></script>
 
 </body>
 </html>
