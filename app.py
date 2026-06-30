@@ -23,13 +23,13 @@ with app.app_context():
     db.create_all()
 
 
-# ---------------- HEURE LOCALE ----------------
+# ---------------- HEURE ----------------
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
 
-# ✅ ✅ ✅ MOTEUR FINAL CORRIGÉ (horaires + congés)
-def add_hours_skip_holidays(start, hours, config, holidays):
+# ✅ ✅ ✅ MOTEUR SIMPLE & STABLE (horaires + congés OK)
+def calculate_end(start, hours, config, holidays):
 
     def is_holiday(d):
         return d.strftime("%Y-%m-%d") in holidays
@@ -39,44 +39,47 @@ def add_hours_skip_holidays(start, hours, config, holidays):
 
     while remaining > 0:
 
-        weekday = current.strftime("%a").lower()[:3]
-        work_hours = config["work_hours"].get(weekday, [])
-
-        in_slot = False
-        next_stop = None
-
-        for start_str, end_str in work_hours:
-
-            h1, m1 = map(int, start_str.split(":"))
-            h2, m2 = map(int, end_str.split(":"))
-
-            slot_start = current.replace(hour=h1, minute=m1, second=0)
-            slot_end = current.replace(hour=h2, minute=m2, second=0)
-
-            if slot_start <= current < slot_end:
-                in_slot = True
-                next_stop = slot_end
-                break
-
-        # ✅ si pas dans une plage → on corrige avec la config
-        if not in_slot:
-            current = next_work_time(current, config)
-            continue
+        # ✅ se placer dans un créneau valide
+        current = next_work_time(current, config)
 
         # ✅ skip congé
         if is_holiday(current):
             current += timedelta(days=1)
-            current = next_work_time(current, config)
             continue
 
-        available = (next_stop - current).total_seconds() / 3600
+        weekday = current.strftime("%a").lower()[:3]
+        work_hours = config["work_hours"].get(weekday, [])
+
+        if not work_hours:
+            current += timedelta(days=1)
+            continue
+
+        # ✅ trouver plage active
+        active_slot = None
+
+        for s, e in work_hours:
+            h1, m1 = map(int, s.split(":"))
+            h2, m2 = map(int, e.split(":"))
+
+            start_slot = current.replace(hour=h1, minute=m1, second=0)
+            end_slot = current.replace(hour=h2, minute=m2, second=0)
+
+            if start_slot <= current < end_slot:
+                active_slot = end_slot
+                break
+
+        if not active_slot:
+            current += timedelta(minutes=30)
+            continue
+
+        # ✅ temps dispo dans la plage
+        available = (active_slot - current).total_seconds() / 3600
 
         if remaining <= available:
             return current + timedelta(hours=remaining)
 
-        # ✅ consommer le créneau
         remaining -= available
-        current = next_stop
+        current = active_slot
 
     return current
 
@@ -145,76 +148,83 @@ def delete_holiday(date):
 # ---------------- TASKS ----------------
 @app.route("/api/tasks")
 def get_tasks():
+    try:
+        tasks = Task.query.order_by(Task.ordre).all()
 
-    tasks = Task.query.order_by(Task.ordre).all()
+        # ✅ CONFIG SAFE
+        config = DEFAULT_CONFIG.copy()
 
-    # ✅ config sûre
-    config = DEFAULT_CONFIG.copy()
-
-    settings = Settings.query.first()
-    if settings and settings.data:
-        try:
-            user_config = json.loads(settings.data)
-            if "work_hours" in user_config:
-                config["work_hours"] = user_config["work_hours"]
-        except Exception as e:
-            print("Erreur config:", e)
-
-    holidays = [h.date for h in Holiday.query.all()]
-
-    now = now_paris()
-    current = now
-    result = []
-
-    for t in tasks:
-
-        restant = 0 if t.etat == "Terminé" else float(t.duree or 0)
-
-        start_time = next_work_time(current, config)
-
-        # ✅ skip congés au départ
-        while start_time.strftime("%Y-%m-%d") in holidays:
-            start_time += timedelta(days=1)
-            start_time = next_work_time(start_time, config)
-
-        # ✅ calcul réel
-        if restant > 0:
-            end_time = add_hours_skip_holidays(start_time, restant, config, holidays)
-        else:
-            end_time = start_time
-
-        # ✅ deadline
-        deadline_display = "-"
-        retard = False
-
-        if t.deadline:
+        settings = Settings.query.first()
+        if settings and settings.data:
             try:
-                dl = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
+                user_config = json.loads(settings.data)
 
-                if end_time.replace(tzinfo=None) > dl:
-                    retard = True
+                if "work_hours" in user_config:
+                    for day in DEFAULT_CONFIG["work_hours"]:
+                        config["work_hours"][day] = user_config["work_hours"].get(
+                            day,
+                            DEFAULT_CONFIG["work_hours"][day]
+                        )
 
-                deadline_display = dl.strftime("%d/%m")
+            except Exception as e:
+                print("Erreur config:", e)
 
-            except:
-                pass
+        holidays = [h.date for h in Holiday.query.all()]
 
-        result.append({
-            "id": t.id,
-            "nom": t.nom,
-            "client": t.client,
-            "etat": t.etat,
-            "duree": t.duree,
-            "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-            "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-            "deadline": deadline_display,
-            "retard": retard
-        })
+        now = now_paris()
+        current = now
+        result = []
 
-        if t.etat != "Terminé":
-            current = end_time
+        for t in tasks:
 
-    return jsonify(result)
+            restant = 0 if t.etat == "Terminé" else float(t.duree or 0)
+
+            # ✅ point de départ
+            start_time = next_work_time(current, config)
+
+            while start_time.strftime("%Y-%m-%d") in holidays:
+                start_time += timedelta(days=1)
+                start_time = next_work_time(start_time, config)
+
+            # ✅ calcul
+            end_time = calculate_end(start_time, restant, config, holidays)
+
+            # ✅ deadline
+            deadline_display = "-"
+            retard = False
+
+            if t.deadline:
+                try:
+                    dl = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
+
+                    if end_time.replace(tzinfo=None) > dl:
+                        retard = True
+
+                    deadline_display = dl.strftime("%d/%m")
+
+                except:
+                    pass
+
+            result.append({
+                "id": t.id,
+                "nom": t.nom,
+                "client": t.client,
+                "etat": t.etat,
+                "duree": t.duree,
+                "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
+                "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
+                "deadline": deadline_display,
+                "retard": retard
+            })
+
+            if t.etat != "Terminé":
+                current = end_time
+
+        return jsonify(result)
+
+    except Exception as e:
+        print("ERREUR GLOBAL:", e)
+        return jsonify([])
 
 
 # ---------------- ADD ----------------
