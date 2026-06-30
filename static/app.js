@@ -9,9 +9,8 @@ function loadTasks() {
 
       data.forEach(t => {
 
-        let classe = "task afaire";
-        if (t.etat === "Terminé") classe = "task termine";
-        if (t.retard) classe += " retard";
+        let classe = "task";
+        if (t.etat === "Terminé") classe += " termine";
 
         html += `
         <div class="${classe}" draggable="true" data-id="${t.id}">
@@ -25,7 +24,7 @@ function loadTasks() {
             <p style="color:green">✅ Terminée</p>
           `}
 
-          <p>📅 ${t.deadline || "-"}</p>
+          <p>📅 ${t.deadline}</p>
 
           ${t.retard ? "<p style='color:red'>⚠️ RETARD</p>" : ""}
 
@@ -45,39 +44,17 @@ function loadTasks() {
 }
 
 
-// ✅ FINIR
-function finishTask(id) {
-  fetch(`/api/tasks/${id}/done`, {
-    method: "POST"
-  }).then(loadTasks);
-}
-
-
-// ✅ DELETE
-function deleteTask(id) {
-  if (!confirm("Supprimer ?")) return;
-
-  fetch(`/api/tasks/${id}`, {
-    method: "DELETE"
-  }).then(loadTasks);
-}
-
-
-// ✅ AJOUT DEADLINE CORRIGÉE
+// ✅ AJOUT
 function addTask() {
 
   const nom = document.getElementById("nom").value.trim();
   const duree = parseFloat(document.getElementById("duree").value);
-  const dl = document.getElementById("deadline").value.trim();
+  let dl = document.getElementById("deadline").value.trim();
 
-  if (!nom || isNaN(duree)) {
-    alert("Erreur saisie");
-    return;
-  }
+  dl = dl.replace(/\s/g, "");
 
   let deadline = null;
 
-  // ✅ VALIDATION STRICTE JJMMAAAA
   if (/^\d{8}$/.test(dl)) {
     const day = dl.substring(0,2);
     const month = dl.substring(2,4);
@@ -92,6 +69,24 @@ function addTask() {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({nom, duree, deadline})
+  }).then(loadTasks);
+}
+
+
+// ✅ TERMINE
+function finishTask(id) {
+  fetch(`/api/tasks/${id}/done`, {
+    method: "POST"
+  }).then(loadTasks);
+}
+
+
+// ✅ DELETE
+function deleteTask(id) {
+  if (!confirm("Supprimer ?")) return;
+
+  fetch(`/api/tasks/${id}`, {
+    method: "DELETE"
   }).then(loadTasks);
 }
 
