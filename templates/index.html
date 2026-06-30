@@ -1,64 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Planning</title>
-
-  <style>
-    body {
-      font-family: Arial;
-      margin: 10px;
-    }
-
-    h2 {
-      margin-bottom: 10px;
-    }
-
-    input {
-      padding: 8px;
-      margin: 5px;
-    }
-
-    button {
-      padding: 8px;
-      margin: 5px;
-    }
-
-    .task {
-      margin: 6px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      font-size: 14px;
-    }
-
-    .termine {
-      background: #e0e0e0;
-      opacity: 0.7;
-    }
-
-    .retard {
-      border: 2px solid red;
-    }
-  </style>
-</head>
-
-<body>
-
 <h2>Planning</h2>
 
-<input id="nom" placeholder="Nom tâche">
-<input id="duree" placeholder="Durée (h)">
+<input id="nom" placeholder="Nom">
+<input id="client" placeholder="Client">
+<input id="duree" placeholder="Durée">
 <input id="deadline" placeholder="JJMMAAAA">
-
 <button onclick="addTask()">Ajouter</button>
 
-<hr>
-
+<h3>Tâches</h3>
 <div id="tasks"></div>
 
-<!-- ✅ ✅ ✅ LA BONNE LIGNE (TRÈS IMPORTANT) -->
-<script src="/static/app.js"></script>
+<h3>Congés</h3>
+<input id="holiday">
+<button onclick="addHoliday()">Ajouter</button>
+<ul id="holidayList"></ul>
 
-</body>
-</html>
+<h3>Paramètres</h3>
+<textarea id="settingsBox"></textarea>
+<button onclick="saveSettings()">Sauvegarder</button>
+
+<script src="/static/app.js"></script>
