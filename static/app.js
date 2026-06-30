@@ -1,5 +1,3 @@
-let draggedId = null;
-
 function loadTasks() {
   fetch("/api/tasks")
     .then(r => r.json())
@@ -8,122 +6,93 @@ function loadTasks() {
       let html = "";
 
       data.forEach(t => {
-
-        let classe = "task";
-        if (t.etat === "Terminé") classe += " termine";
-
         html += `
-        <div class="${classe}" draggable="true" data-id="${t.id}">
-
-          <h3>${t.nom}</h3>
-
+        <div class="task">
+          <span><b>${t.nom}</b></span>
+          <span>${t.client || "-"}</span>
           ${t.etat !== "Terminé" ? `
-            <p>⏱ ${t.duree}h</p>
-            <p>${t.debut} → ${t.fin}</p>
-          ` : `
-            <p style="color:green">✅ Terminée</p>
-          `}
-
-          <p>📅 ${t.deadline}</p>
-
-          ${t.retard ? "<p style='color:red'>⚠️ RETARD</p>" : ""}
-
-          <div>
-            ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
-            <button onclick="deleteTask(${t.id})">🗑</button>
-          </div>
-
-        </div>
-        `;
+            <span>${t.duree}h</span>
+            <span>${t.debut} → ${t.fin}</span>
+          ` : `<span>✅</span>`}
+          <span>${t.deadline}</span>
+          ${t.retard ? "<span style='color:red'>⚠️</span>" : ""}
+          ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
+        </div>`;
       });
 
       document.getElementById("tasks").innerHTML = html;
-
-      enableDrag();
     });
 }
 
 
-// ✅ AJOUT
 function addTask() {
-
-  const nom = document.getElementById("nom").value.trim();
-  const duree = parseFloat(document.getElementById("duree").value);
-  let dl = document.getElementById("deadline").value.trim();
-
-  dl = dl.replace(/\s/g, "");
-
-  let deadline = null;
+  let dl = document.getElementById("deadline").value;
 
   if (/^\d{8}$/.test(dl)) {
-    const day = dl.substring(0,2);
-    const month = dl.substring(2,4);
-    const year = dl.substring(4,8);
-
-    deadline = `${year}-${month}-${day}T00:00:00`;
-  }
-
-  console.log("Deadline envoyée :", deadline);
+    dl = `${dl.slice(4,8)}-${dl.slice(2,4)}-${dl.slice(0,2)}T00:00:00`;
+  } else dl = null;
 
   fetch("/api/tasks", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({nom, duree, deadline})
+    body: JSON.stringify({
+      nom: nom.value,
+      client: client.value,
+      duree: duree.value,
+      deadline: dl
+    })
   }).then(loadTasks);
 }
 
 
-// ✅ TERMINE
 function finishTask(id) {
-  fetch(`/api/tasks/${id}/done`, {
-    method: "POST"
-  }).then(loadTasks);
+  fetch(`/api/tasks/${id}/done`, {method:"POST"}).then(loadTasks);
 }
 
 
-// ✅ DELETE
-function deleteTask(id) {
-  if (!confirm("Supprimer ?")) return;
+// -------- HOLIDAYS --------
+function loadHolidays() {
+  fetch("/api/holidays")
+    .then(r => r.json())
+    .then(d => {
+      holidayList.innerHTML =
+        d.map(x=>`<li>${x}</li>`).join("");
+    });
+}
 
-  fetch(`/api/tasks/${id}`, {
-    method: "DELETE"
-  }).then(loadTasks);
+function addHoliday() {
+  let v = holiday.value;
+  if (/^\d{8}$/.test(v)) {
+    v = `${v.slice(4,8)}-${v.slice(2,4)}-${v.slice(0,2)}`;
+  }
+  fetch("/api/holidays", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({date:v})
+  }).then(loadHolidays);
 }
 
 
-// ✅ DRAG
-function enableDrag() {
-  const items = document.querySelectorAll(".task");
-
-  items.forEach(item => {
-
-    item.addEventListener("dragstart", () => {
-      draggedId = parseInt(item.dataset.id);
+// -------- SETTINGS --------
+function loadSettings(){
+  fetch("/api/settings")
+    .then(r=>r.json())
+    .then(d=>{
+      settingsBox.value = JSON.stringify(d,null,2);
     });
+}
 
-    item.addEventListener("dragover", e => e.preventDefault());
-
-    item.addEventListener("drop", () => {
-
-      const targetId = parseInt(item.dataset.id);
-      if (draggedId === targetId) return;
-
-      const ids = Array.from(document.querySelectorAll(".task"))
-        .map(el => parseInt(el.dataset.id));
-
-      const from = ids.indexOf(draggedId);
-      const to = ids.indexOf(targetId);
-
-      ids.splice(to, 0, ids.splice(from, 1)[0]);
-
-      fetch("/api/tasks/reorder", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(ids)
-      }).then(loadTasks);
-    });
+function saveSettings(){
+  fetch("/api/settings", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: settingsBox.value
   });
 }
 
+
+// INIT
 setInterval(loadTasks, 3000);
 loadTasks();
+loadHolidays();
+loadSettings();
