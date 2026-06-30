@@ -6,7 +6,15 @@ from utils import next_work_time, add_hours, DEFAULT_CONFIG
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
+import os
+
+database_url = os.environ.get("DATABASE_URL")
+
+# ✅ correction Render (important)
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
