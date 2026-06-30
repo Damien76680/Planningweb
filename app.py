@@ -1,20 +1,17 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from models import db, Task, Holiday, Settings
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from utils import next_work_time, DEFAULT_CONFIG
-import json
 import os
 
 app = Flask(__name__)
 
-# ---------------- DATABASE ----------------
-database_url = os.environ.get("DATABASE_URL")
+# DB
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-if database_url and database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url or "sqlite:///db.sqlite3"
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///db.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
@@ -23,187 +20,38 @@ with app.app_context():
     db.create_all()
 
 
-# ---------------- HEURE ----------------
-def now_paris():
+def now():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
 
-# ✅ ✅ ✅ MOTEUR SIMPLE & STABLE (horaires + congés OK)
-def calculate_end(start, hours, config, holidays):
-
-    def is_holiday(d):
-        return d.strftime("%Y-%m-%d") in holidays
-
-    current = start
-    remaining = hours
-
-    while remaining > 0:
-
-        # ✅ se placer dans un créneau valide
-        current = next_work_time(current, config)
-
-        # ✅ skip congé
-        if is_holiday(current):
-            current += timedelta(days=1)
-            continue
-
-        weekday = current.strftime("%a").lower()[:3]
-        work_hours = config["work_hours"].get(weekday, [])
-
-        if not work_hours:
-            current += timedelta(days=1)
-            continue
-
-        # ✅ trouver plage active
-        active_slot = None
-
-        for s, e in work_hours:
-            h1, m1 = map(int, s.split(":"))
-            h2, m2 = map(int, e.split(":"))
-
-            start_slot = current.replace(hour=h1, minute=m1, second=0)
-            end_slot = current.replace(hour=h2, minute=m2, second=0)
-
-            if start_slot <= current < end_slot:
-                active_slot = end_slot
-                break
-
-        if not active_slot:
-            current += timedelta(minutes=30)
-            continue
-
-        # ✅ temps dispo dans la plage
-        available = (active_slot - current).total_seconds() / 3600
-
-        if remaining <= available:
-            return current + timedelta(hours=remaining)
-
-        remaining -= available
-        current = active_slot
-
-    return current
-
-
-# ---------------- PAGE ----------------
+# ---------------- PAGE
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
-# ---------------- SETTINGS ----------------
-@app.route("/api/settings")
-def get_settings():
-    s = Settings.query.first()
-
-    if s and s.data:
-        try:
-            return jsonify(json.loads(s.data))
-        except:
-            pass
-
-    return jsonify(DEFAULT_CONFIG)
-
-
-@app.route("/api/settings", methods=["POST"])
-def save_settings():
-    data = request.get_json()
-
-    s = Settings.query.first() or Settings()
-    s.data = json.dumps(data)
-
-    db.session.add(s)
-    db.session.commit()
-
-    return {"success": True}
-
-
-# ---------------- HOLIDAYS ----------------
-@app.route("/api/holidays")
-def get_holidays():
-    return jsonify([h.date for h in Holiday.query.all()])
-
-
-@app.route("/api/holidays", methods=["POST"])
-def add_holiday():
-    date = request.json.get("date")
-
-    if date and not Holiday.query.filter_by(date=date).first():
-        db.session.add(Holiday(date=date))
-        db.session.commit()
-
-    return {"success": True}
-
-
-@app.route("/api/holidays/<date>", methods=["DELETE"])
-def delete_holiday(date):
-    h = Holiday.query.filter_by(date=date).first()
-
-    if h:
-        db.session.delete(h)
-        db.session.commit()
-
-    return {"success": True}
-
-
-# ---------------- TASKS ----------------
+# ---------------- TASKS
 @app.route("/api/tasks")
 def get_tasks():
     try:
         tasks = Task.query.order_by(Task.ordre).all()
 
-        # ✅ CONFIG SAFE
-        config = DEFAULT_CONFIG.copy()
-
-        settings = Settings.query.first()
-        if settings and settings.data:
-            try:
-                user_config = json.loads(settings.data)
-
-                if "work_hours" in user_config:
-                    for day in DEFAULT_CONFIG["work_hours"]:
-                        config["work_hours"][day] = user_config["work_hours"].get(
-                            day,
-                            DEFAULT_CONFIG["work_hours"][day]
-                        )
-
-            except Exception as e:
-                print("Erreur config:", e)
+        result = []
+        current = now()
 
         holidays = [h.date for h in Holiday.query.all()]
 
-        now = now_paris()
-        current = now
-        result = []
-
         for t in tasks:
 
-            restant = 0 if t.etat == "Terminé" else float(t.duree or 0)
+            duration = 0 if t.etat == "Terminé" else float(t.duree or 0)
 
-            # ✅ point de départ
-            start_time = next_work_time(current, config)
+            start = current
+            end = start + timedelta(hours=duration)
 
-            while start_time.strftime("%Y-%m-%d") in holidays:
-                start_time += timedelta(days=1)
-                start_time = next_work_time(start_time, config)
-
-            # ✅ calcul
-            end_time = calculate_end(start_time, restant, config, holidays)
-
-            # ✅ deadline
-            deadline_display = "-"
-            retard = False
-
-            if t.deadline:
-                try:
-                    dl = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
-
-                    if end_time.replace(tzinfo=None) > dl:
-                        retard = True
-
-                    deadline_display = dl.strftime("%d/%m")
-
-                except:
-                    pass
+            # skip simple holiday (jour entier)
+            while start.strftime("%Y-%m-%d") in holidays:
+                start += timedelta(days=1)
+                end = start + timedelta(hours=duration)
 
             result.append({
                 "id": t.id,
@@ -211,71 +59,93 @@ def get_tasks():
                 "client": t.client,
                 "etat": t.etat,
                 "duree": t.duree,
-                "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-                "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-                "deadline": deadline_display,
-                "retard": retard
+                "debut": start.strftime("%d/%m %H:%M"),
+                "fin": end.strftime("%d/%m %H:%M"),
+                "deadline": t.deadline or "-",
+                "retard": False
             })
 
             if t.etat != "Terminé":
-                current = end_time
+                current = end
 
         return jsonify(result)
 
     except Exception as e:
-        print("ERREUR GLOBAL:", e)
+        print("ERREUR TASKS:", e)
         return jsonify([])
 
 
-# ---------------- ADD ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
+    try:
+        data = request.get_json()
 
-    data = request.get_json()
+        t = Task(
+            nom=data.get("nom"),
+            client=data.get("client"),
+            duree=float(data.get("duree", 1)),
+            deadline=data.get("deadline"),
+            etat="À faire",
+            ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
+        )
 
-    task = Task(
-        nom=data.get("nom"),
-        client=data.get("client"),
-        duree=float(data.get("duree")),
-        deadline=data.get("deadline"),
-        etat="À faire",
-        ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
-    )
+        db.session.add(t)
+        db.session.commit()
 
-    db.session.add(task)
-    db.session.commit()
+        return {"success": True}
 
-    return {"success": True}
+    except Exception as e:
+        print("ERREUR ADD:", e)
+        return {"success": False}
 
 
-# ---------------- REORDER ----------------
+# ---------------- HOLIDAYS
+@app.route("/api/holidays")
+def get_holidays():
+    return jsonify([h.date for h in Holiday.query.all()])
+
+
+@app.route("/api/holidays", methods=["POST"])
+def add_holiday():
+    try:
+        date = request.json.get("date")
+
+        if date:
+            db.session.add(Holiday(date=date))
+            db.session.commit()
+
+        return {"success": True}
+    except Exception as e:
+        print("ERREUR HOLIDAY:", e)
+        return {"success": False}
+
+
+# ---------------- REORDER
 @app.route("/api/tasks/reorder", methods=["POST"])
-def reorder_tasks():
-
+def reorder():
     ids = request.get_json()
 
-    for i, task_id in enumerate(ids):
-        t = Task.query.get(task_id)
+    for i, tid in enumerate(ids):
+        t = Task.query.get(tid)
         if t:
             t.ordre = i
 
     db.session.commit()
-
     return {"success": True}
 
 
-# ---------------- DONE ----------------
+# ---------------- DONE
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
-def finish_task(id):
+def done(id):
     t = Task.query.get_or_404(id)
     t.etat = "Terminé"
     db.session.commit()
     return {"success": True}
 
 
-# ---------------- DELETE ----------------
+# ---------------- DELETE
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
-def delete_task(id):
+def delete(id):
     t = Task.query.get_or_404(id)
     db.session.delete(t)
     db.session.commit()
