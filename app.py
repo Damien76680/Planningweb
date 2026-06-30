@@ -82,8 +82,14 @@ else:
             "retard": retard
         })
 
-        if t.etat != "Terminé":
-            current = end_time
+        if t.etat == "En cours":
+    current = end_time  # continue depuis sa vraie base
+
+elif t.etat == "À faire":
+    current = end_time
+
+# Terminé : on n'influence pas
+
 
     db.session.commit()
     return jsonify(result)
