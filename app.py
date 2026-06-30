@@ -14,7 +14,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# ✅ fonction centralisée heure France
+# ✅ heure France
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
@@ -34,32 +34,46 @@ def get_tasks():
     current = now
     result = []
 
+    first_todo_done = False
+
     for t in tasks:
 
-        # ---------------- UPDATE TEMPS EN COURS ----------------
+        # ✅ CALCUL TEMPS EN COURS (SANS TOUCHER start_time)
         if t.etat == "En cours" and t.start_time:
             start = datetime.fromisoformat(t.start_time)
             delta = work_time_between(start, now, DEFAULT_CONFIG)
 
             if delta > 0:
                 t.temps_fait += delta
-                t.start_time = now.isoformat()
+
+                # ⚠️ ON NE MODIFIE PLUS start_time
+                # t.start_time = now.isoformat() ❌ SUPPRIMÉ
 
                 if t.temps_fait >= t.duree:
                     t.etat = "Terminé"
                     t.start_time = None
 
-        # ---------------- GESTION DU DÉBUT ----------------
+        # ---------------- DÉBUT ----------------
+
         if t.etat == "En cours" and t.start_time:
+            # ✅ début réel figé
             start_time = datetime.fromisoformat(t.start_time)
 
         elif t.etat == "À faire":
-            start_time = next_work_time(now, DEFAULT_CONFIG)
+
+            if not first_todo_done:
+                # ✅ première tâche → démarre maintenant
+                start_time = next_work_time(now, DEFAULT_CONFIG)
+                first_todo_done = True
+            else:
+                # ✅ suivantes → enchaînement
+                start_time = next_work_time(current, DEFAULT_CONFIG)
 
         else:
             start_time = next_work_time(current, DEFAULT_CONFIG)
 
         # ---------------- TEMPS RESTANT ----------------
+
         temps_base = t.duree
 
         if t.temps_fait > t.duree:
@@ -71,12 +85,14 @@ def get_tasks():
         restant = max(0, temps_base - t.temps_fait)
 
         # ---------------- FIN ----------------
+
         if restant <= 0:
             end_time = start_time
         else:
             end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
         # ---------------- DEADLINE ----------------
+
         retard = False
         deadline_display = ""
 
@@ -88,6 +104,7 @@ def get_tasks():
                 retard = True
 
         # ---------------- JSON ----------------
+
         result.append({
             "id": t.id,
             "nom": t.nom,
@@ -100,11 +117,13 @@ def get_tasks():
             "retard": retard
         })
 
-        # ---------------- CHAÎNE DU PLANNING ----------------
-        if t.etat in ["En cours", "À faire"]:
+        # ---------------- CHAÎNE ----------------
+
+        if t.etat in ["À faire", "En cours"]:
             current = end_time
 
     db.session.commit()
+
     return jsonify(result)
 
 
@@ -141,7 +160,9 @@ def update_status(id):
     t.etat = data["etat"]
 
     if data["etat"] == "En cours":
-        t.start_time = now_paris().isoformat()
+        # ✅ fixé une seule fois
+        if not t.start_time:
+            t.start_time = now_paris().isoformat()
 
     if data["etat"] == "Pause":
         t.start_time = None
