@@ -17,6 +17,7 @@ with app.app_context():
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -33,19 +34,15 @@ def get_tasks():
 
     for t in tasks:
 
-        # ✅ durée restante simple
         restant = 0 if t.etat == "Terminé" else t.duree
 
-        # ✅ début planning
         start_time = next_work_time(current, DEFAULT_CONFIG)
 
-        # ✅ fin
         if restant <= 0:
             end_time = start_time
         else:
             end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
-        # ✅ deadline
         retard = False
         deadline_display = ""
 
@@ -63,8 +60,9 @@ def get_tasks():
             "id": t.id,
             "nom": t.nom,
             "etat": t.etat,
-            "debut": start_time.strftime("%d/%m %H:%M"),
-            "fin": end_time.strftime("%d/%m %H:%M"),
+            "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
+            "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
+            "duree": t.duree,
             "deadline": deadline_display,
             "retard": retard
         })
@@ -75,7 +73,7 @@ def get_tasks():
     return jsonify(result)
 
 
-# ✅ AJOUT
+# AJOUT
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     data = request.json
@@ -101,7 +99,7 @@ def add_task():
     return {"success": True}
 
 
-# ✅ TERMINER
+# TERMINER
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
     t = Task.query.get_or_404(id)
@@ -113,7 +111,7 @@ def finish_task(id):
     return {"success": True}
 
 
-# ✅ DELETE
+# DELETE
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
     t = Task.query.get_or_404(id)
@@ -122,7 +120,7 @@ def delete_task(id):
     return {"success": True}
 
 
-# ✅ REORDER
+# REORDER
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
     ids = request.json
