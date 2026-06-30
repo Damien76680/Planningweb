@@ -1,4 +1,3 @@
-// ---------------- TASKS ----------------
 function loadTasks() {
   fetch("/api/tasks")
     .then(r => r.json())
@@ -16,10 +15,7 @@ function loadTasks() {
           ${t.etat !== "Terminé" ? `
             <span class="col-duree">${t.duree}h</span>
             <span class="col-temps">${t.debut} → ${t.fin}</span>
-          ` : `
-            <span class="col-duree">✅</span>
-            <span class="col-temps"></span>
-          `}
+          ` : `<span class="col-duree">✅</span>`}
 
           <span class="col-deadline">${t.deadline}</span>
 
@@ -41,24 +37,18 @@ function loadTasks() {
 }
 
 
-// ---------------- ADD TASK ----------------
+// ADD
 function addTask() {
+  const nom = nomInput.value.trim();
+  const client = clientInput.value.trim();
+  const duree = parseFloat(dureeInput.value);
+  let dl = deadlineInput.value.trim();
 
-  const nom = document.getElementById("nom").value.trim();
-  const client = document.getElementById("client").value.trim();
-  const duree = parseFloat(document.getElementById("duree").value);
-  let dl = document.getElementById("deadline").value.trim();
-
-  if (!nom || isNaN(duree)) {
-    alert("Erreur saisie");
-    return;
-  }
+  if (!nom || isNaN(duree)) return alert("Erreur");
 
   if (/^\d{8}$/.test(dl)) {
     dl = `${dl.slice(4,8)}-${dl.slice(2,4)}-${dl.slice(0,2)}T00:00:00`;
-  } else {
-    dl = null;
-  }
+  } else dl = null;
 
   fetch("/api/tasks", {
     method:"POST",
@@ -68,134 +58,52 @@ function addTask() {
 }
 
 
-// ---------------- MOVE ----------------
-function moveUp(id) {
+// MOVE
+function moveUp(id){
   fetch("/api/tasks")
-    .then(r => r.json())
-    .then(tasks => {
-
-      const ids = tasks.map(t => t.id);
+    .then(r=>r.json())
+    .then(tasks=>{
+      const ids = tasks.map(t=>t.id);
       const i = ids.indexOf(id);
-
-      if (i > 0) {
-        [ids[i-1], ids[i]] = [ids[i], ids[i-1]];
-
-        fetch("/api/tasks/reorder", {
+      if(i>0){
+        [ids[i-1], ids[i]]=[ids[i], ids[i-1]];
+        fetch("/api/tasks/reorder",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body: JSON.stringify(ids)
+          body:JSON.stringify(ids)
         }).then(loadTasks);
       }
     });
 }
 
-function moveDown(id) {
+function moveDown(id){
   fetch("/api/tasks")
-    .then(r => r.json())
-    .then(tasks => {
-
-      const ids = tasks.map(t => t.id);
+    .then(r=>r.json())
+    .then(tasks=>{
+      const ids = tasks.map(t=>t.id);
       const i = ids.indexOf(id);
-
-      if (i < ids.length - 1) {
-        [ids[i], ids[i+1]] = [ids[i+1], ids[i]];
-
-        fetch("/api/tasks/reorder", {
+      if(i<ids.length-1){
+        [ids[i], ids[i+1]]=[ids[i+1], ids[i]];
+        fetch("/api/tasks/reorder",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body: JSON.stringify(ids)
+          body:JSON.stringify(ids)
         }).then(loadTasks);
       }
     });
 }
 
 
-// ---------------- HOLIDAYS ----------------
-function loadHolidays() {
-  fetch("/api/holidays")
-    .then(r => r.json())
-    .then(data => {
-      let html = "";
-      data.forEach(d => {
-        html += `<li>${d}</li>`;
-      });
-      document.getElementById("holidayList").innerHTML = html;
-    });
+// ACTIONS
+function finishTask(id){
+  fetch(`/api/tasks/${id}/done`,{method:"POST"}).then(loadTasks);
 }
 
-function addHoliday() {
-  let val = document.getElementById("holiday").value;
-
-  if (/^\d{8}$/.test(val)) {
-    val = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
-  }
-
-  fetch("/api/holidays", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date: val})
-  }).then(loadHolidays);
+function deleteTask(id){
+  fetch(`/api/tasks/${id}`,{method:"DELETE"}).then(loadTasks);
 }
 
 
-// ---------------- SETTINGS ----------------
-function loadSettings() {
-
-  fetch("/api/settings")
-    .then(r => r.json())
-    .then(data => {
-
-      const wh = data.work_hours;
-
-      function set(day, i) {
-        if (wh[day] && wh[day][i]) {
-          document.getElementById(`${day}${i+1}_start`).value = wh[day][i][0];
-          document.getElementById(`${day}${i+1}_end`).value = wh[day][i][1];
-        }
-      }
-
-      set("mon",0); set("mon",1);
-      set("tue",0); set("tue",1);
-      set("wed",0); set("wed",1);
-      set("thu",0); set("thu",1);
-      set("fri",0);
-    });
-}
-
-
-function saveSettings() {
-
-  function get(day, index) {
-    let s = document.getElementById(`${day}${index}_start`).value;
-    let e = document.getElementById(`${day}${index}_end`).value;
-
-    if (s && e) return [s, e];
-    return null;
-  }
-
-  const data = {
-    work_hours: {
-      mon: [get("mon",1), get("mon",2)].filter(x=>x),
-      tue: [get("tue",1), get("tue",2)].filter(x=>x),
-      wed: [get("wed",1), get("wed",2)].filter(x=>x),
-      thu: [get("thu",1), get("thu",2)].filter(x=>x),
-      fri: [get("fri",1)].filter(x=>x),
-      sat: [],
-      sun: []
-    }
-  };
-
-  fetch("/api/settings", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(data)
-  }).then(() => alert("✅ Sauvegardé"));
-}
-
-
-// ---------------- INIT ----------------
-setInterval(loadTasks, 3000);
-
+// INIT
+setInterval(loadTasks,3000);
 loadTasks();
-loadHolidays();
-loadSettings();
