@@ -11,7 +11,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
-with app.app_context():
+with app.app.app_context():
     db.create_all()
 
 
@@ -45,19 +45,21 @@ def get_tasks():
         else:
             end_time = start_time
 
-        # ✅ DEADLINE SIMPLE ET FIABLE
+        # ✅ DEADLINE CORRIGÉE (IMPORTANT)
         deadline_display = "-"
         retard = False
 
-        if t.deadline:
+        if t.deadline is not None and t.deadline != "":
             try:
                 dl = datetime.fromisoformat(t.deadline)
+
                 deadline_display = dl.strftime("%d/%m")
 
                 if end_time > dl:
                     retard = True
 
-            except:
+            except Exception as e:
+                print("Erreur deadline:", t.deadline, e)
                 deadline_display = "-"
 
         result.append({
@@ -77,7 +79,7 @@ def get_tasks():
     return jsonify(result)
 
 
-# ---------------- ADD ----------------
+# ---------------- ADD TASK ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
 
@@ -87,15 +89,23 @@ def add_task():
     duree = data.get("duree")
     deadline = data.get("deadline")
 
+    print("DEBUG deadline reçu:", deadline)
+
     if not nom or not duree:
         return {"error": "Invalid data"}, 400
 
-    # ✅ validation deadline
-    if deadline:
-        try:
-            datetime.fromisoformat(deadline)
-        except:
+    # ✅ nettoyage deadline
+    if deadline and isinstance(deadline, str):
+        deadline = deadline.strip()
+
+        if deadline == "":
             deadline = None
+        else:
+            try:
+                datetime.fromisoformat(deadline)
+            except:
+                print("Deadline invalide ignorée:", deadline)
+                deadline = None
     else:
         deadline = None
 
@@ -115,7 +125,7 @@ def add_task():
     return {"success": True}
 
 
-# ---------------- DONE ----------------
+# ---------------- FINISH ----------------
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
 
