@@ -10,7 +10,8 @@ function loadTasks() {
         html += `
         <div class="task ${t.retard ? "retard" : ""}">
 
-          <span class="col-nom">${t.nom}</span>
+          <span class="col-nom">${t.nom || "-"}</span>
+
           <span class="col-client">${t.client || "-"}</span>
 
           ${t.etat !== "Terminé" ? `
@@ -34,74 +35,104 @@ function loadTasks() {
       });
 
       document.getElementById("tasks").innerHTML = html;
-    });
+    })
+    .catch(err => console.error("Erreur loadTasks:", err));
 }
 
 
-// ---------------- ADD ----------------
+// ---------------- ✅ ADD TASK FIX CLIENT ----------------
 function addTask() {
-  const nom = document.getElementById("nom").value;
-  const client = document.getElementById("client").value;
+
+  const nom = document.getElementById("nom").value.trim();
+  const client = document.getElementById("client").value.trim();
   const duree = parseFloat(document.getElementById("duree").value);
-  let dl = document.getElementById("deadline").value;
+  let dl = document.getElementById("deadline").value.trim();
 
-  if (!nom || isNaN(duree)) return alert("Erreur");
+  console.log("DEBUG ADD:", nom, client, duree); // ✅ debug
 
+  if (!nom || isNaN(duree)) {
+    alert("Erreur saisie");
+    return;
+  }
+
+  // format deadline
   if (/^\d{8}$/.test(dl)) {
     dl = `${dl.slice(4,8)}-${dl.slice(2,4)}-${dl.slice(0,2)}T00:00:00`;
-  } else dl = null;
+  } else {
+    dl = null;
+  }
 
   fetch("/api/tasks", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({nom, client, duree, deadline: dl})
-  }).then(loadTasks);
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      nom: nom,         // ✅ correct
+      client: client,   // ✅ FIX IMPORTANT
+      duree: duree,
+      deadline: dl
+    })
+  })
+  .then(r => r.json())
+  .then(res => {
+    console.log("RESPONSE:", res);
+    loadTasks();
+  })
+  .catch(err => console.error("Erreur addTask:", err));
 }
 
 
 // ---------------- MOVE ----------------
-function moveUp(id){
+function moveUp(id) {
   fetch("/api/tasks")
-    .then(r=>r.json())
-    .then(tasks=>{
-      const ids = tasks.map(t=>t.id);
-      const i = ids.indexOf(id);
-      if(i>0){
-        [ids[i-1], ids[i]]=[ids[i], ids[i-1]];
-        fetch("/api/tasks/reorder",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify(ids)
-        }).then(loadTasks);
-      }
-    });
-}
+    .then(r => r.json())
+    .then(tasks => {
 
-function moveDown(id){
-  fetch("/api/tasks")
-    .then(r=>r.json())
-    .then(tasks=>{
-      const ids = tasks.map(t=>t.id);
-      const i = ids.indexOf(id);
-      if(i<ids.length-1){
-        [ids[i], ids[i+1]]=[ids[i+1], ids[i]];
-        fetch("/api/tasks/reorder",{
+      const ids = tasks.map(t => t.id);
+      const index = ids.indexOf(id);
+
+      if (index > 0) {
+        [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+
+        fetch("/api/tasks/reorder", {
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify(ids)
+          body: JSON.stringify(ids)
         }).then(loadTasks);
       }
     });
 }
 
 
-// ---------------- EVENTS ----------------
-function finishTask(id){
-  fetch(`/api/tasks/${id}/done`,{method:"POST"}).then(loadTasks);
+function moveDown(id) {
+  fetch("/api/tasks")
+    .then(r => r.json())
+    .then(tasks => {
+
+      const ids = tasks.map(t => t.id);
+      const index = ids.indexOf(id);
+
+      if (index < ids.length - 1) {
+        [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
+
+        fetch("/api/tasks/reorder", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(ids)
+        }).then(loadTasks);
+      }
+    });
 }
 
-function deleteTask(id){
-  fetch(`/api/tasks/${id}`,{method:"DELETE"}).then(loadTasks);
+
+// ---------------- ACTIONS ----------------
+function finishTask(id) {
+  fetch(`/api/tasks/${id}/done`, { method:"POST" })
+    .then(loadTasks);
+}
+
+function deleteTask(id) {
+  fetch(`/api/tasks/${id}`, { method:"DELETE" })
+    .then(loadTasks);
 }
 
 
@@ -111,16 +142,18 @@ function loadHolidays() {
     .then(r => r.json())
     .then(data => {
       let html = "";
+
       data.forEach(d => {
         html += `<li>${d}</li>`;
       });
+
       document.getElementById("holidayList").innerHTML = html;
     });
 }
 
 
 function addHoliday() {
-  let val = document.getElementById("holiday").value;
+  let val = document.getElementById("holiday").value.trim();
 
   if (/^\d{8}$/.test(val)) {
     val = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
@@ -136,26 +169,29 @@ function addHoliday() {
 
 // ---------------- SETTINGS ----------------
 function loadSettings() {
-  fetch("/api/settings").then(r=>r.json()).then(data=>{
-    const wh = data.work_hours;
+  fetch("/api/settings")
+    .then(r=>r.json())
+    .then(data=>{
+      const wh = data.work_hours;
 
-    function set(day,i){
-      if(wh[day] && wh[day][i]){
-        document.getElementById(`${day}${i+1}_start`).value = wh[day][i][0];
-        document.getElementById(`${day}${i+1}_end`).value = wh[day][i][1];
+      function set(day,i){
+        if(wh[day] && wh[day][i]){
+          document.getElementById(`${day}${i+1}_start`).value = wh[day][i][0];
+          document.getElementById(`${day}${i+1}_end`).value = wh[day][i][1];
+        }
       }
-    }
 
-    set("mon",0); set("mon",1);
-    set("tue",0); set("tue",1);
-    set("wed",0); set("wed",1);
-    set("thu",0); set("thu",1);
-    set("fri",0);
-  });
+      set("mon",0); set("mon",1);
+      set("tue",0); set("tue",1);
+      set("wed",0); set("wed",1);
+      set("thu",0); set("thu",1);
+      set("fri",0);
+    });
 }
 
 
 function saveSettings(){
+
   function g(day,i){
     let s=document.getElementById(`${day}${i}_start`).value;
     let e=document.getElementById(`${day}${i}_end`).value;
@@ -183,7 +219,7 @@ function saveSettings(){
 
 
 // ---------------- INIT ----------------
-setInterval(loadTasks,3000);
+setInterval(loadTasks, 3000);
 
 loadTasks();
 loadHolidays();
