@@ -83,29 +83,26 @@ def get_tasks():
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
 
-    data = request.json
+    data = request.get_json(force=True)  # ✅ IMPORTANT
+
+    print("DATA RECU :", data)
 
     nom = data.get("nom")
     duree = data.get("duree")
     deadline = data.get("deadline")
 
-    print("DEBUG deadline reçu:", deadline)
+    print("DEADLINE RECU :", deadline)
 
     if not nom or not duree:
         return {"error": "Invalid data"}, 400
 
     # ✅ nettoyage deadline
     if deadline and isinstance(deadline, str):
-        deadline = deadline.strip()
-
-        if deadline == "":
+        try:
+            datetime.fromisoformat(deadline)
+        except:
+            print("Deadline invalide:", deadline)
             deadline = None
-        else:
-            try:
-                datetime.fromisoformat(deadline)
-            except:
-                print("Deadline invalide ignorée:", deadline)
-                deadline = None
     else:
         deadline = None
 
@@ -122,7 +119,10 @@ def add_task():
     db.session.add(task)
     db.session.commit()
 
+    print("SAUVEGARDE DEADLINE :", task.deadline)
+
     return {"success": True}
+
 
 
 # ---------------- FINISH ----------------
