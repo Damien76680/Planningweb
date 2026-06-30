@@ -43,8 +43,9 @@ def get_tasks():
         else:
             end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
-        retard = False
+        # ✅ DEADLINE CORRECTE
         deadline_display = ""
+        retard = False
 
         if t.deadline:
             try:
@@ -53,6 +54,7 @@ def get_tasks():
 
                 if end_time > dl:
                     retard = True
+
             except:
                 deadline_display = ""
 
@@ -60,9 +62,9 @@ def get_tasks():
             "id": t.id,
             "nom": t.nom,
             "etat": t.etat,
+            "duree": t.duree,
             "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
             "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-            "duree": t.duree,
             "deadline": deadline_display,
             "retard": retard
         })
@@ -73,21 +75,33 @@ def get_tasks():
     return jsonify(result)
 
 
-# AJOUT
+# ✅ AJOUT
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     data = request.json
 
-    max_order = db.session.query(db.func.max(Task.ordre)).scalar() or 0
+    nom = data.get("nom")
+    duree = data.get("duree")
 
+    if not nom or not duree:
+        return {"error": "Invalid data"}, 400
+
+    # ✅ DEADLINE CORRECTE
     deadline = data.get("deadline")
 
-    if not deadline or "T" not in deadline:
+    if deadline:
+        try:
+            datetime.fromisoformat(deadline)
+        except:
+            deadline = None
+    else:
         deadline = None
 
+    max_order = db.session.query(db.func.max(Task.ordre)).scalar() or 0
+
     task = Task(
-        nom=data["nom"],
-        duree=float(data["duree"]),
+        nom=nom,
+        duree=float(duree),
         deadline=deadline,
         etat="À faire",
         ordre=max_order + 1
@@ -99,7 +113,7 @@ def add_task():
     return {"success": True}
 
 
-# TERMINER
+# ✅ TERMINER
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
     t = Task.query.get_or_404(id)
@@ -111,7 +125,7 @@ def finish_task(id):
     return {"success": True}
 
 
-# DELETE
+# ✅ DELETE
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
     t = Task.query.get_or_404(id)
@@ -120,7 +134,7 @@ def delete_task(id):
     return {"success": True}
 
 
-# REORDER
+# ✅ REORDER
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
     ids = request.json
