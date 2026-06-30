@@ -7,7 +7,7 @@ import os
 
 app = Flask(__name__)
 
-# ✅ CONFIG BASE (Render + fallback local)
+# ✅ CONFIG DATABASE (Render + local)
 database_url = os.environ.get("DATABASE_URL")
 
 if database_url:
@@ -24,7 +24,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-# ✅ Heure locale
+
+# ✅ Heure FR
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
@@ -56,29 +57,28 @@ def get_tasks():
         else:
             end_time = start_time
 
-        # ✅ DEADLINE (ULTRA ROBUSTE)
+        # ✅ DEADLINE (FIX FINAL TIMEZONE)
         deadline_display = "-"
         retard = False
 
         if t.deadline:
             try:
-                dl_str = str(t.deadline)
+                dl = datetime.fromisoformat(str(t.deadline))
 
-                # ✅ retire timezone si présent
-                if "+" in dl_str:
-                    dl_str = dl_str.split("+")[0]
-
-                dl = datetime.fromisoformat(dl_str)
+                # ✅ IMPORTANT : supprimer timezone pour comparaison
+                dl = dl.replace(tzinfo=None)
+                end_naive = end_time.replace(tzinfo=None)
 
                 deadline_display = dl.strftime("%d/%m")
 
-                if end_time > dl:
+                if end_naive > dl:
                     retard = True
 
             except Exception as e:
                 print("Erreur deadline:", t.deadline, e)
                 deadline_display = "-"
 
+        # ✅ resultat envoyé au front
         result.append({
             "id": t.id,
             "nom": t.nom,
@@ -111,9 +111,10 @@ def add_task():
     if not nom or not duree:
         return {"error": "Invalid data"}, 400
 
-    # ✅ validation deadline
+    # ✅ VALIDATION DEADLINE
     if deadline:
         try:
+            # supprime timezone si ajoutée par PostgreSQL
             datetime.fromisoformat(str(deadline).split("+")[0])
         except:
             print("Deadline invalide ignorée:", deadline)
