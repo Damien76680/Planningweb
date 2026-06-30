@@ -52,10 +52,7 @@ def get_settings():
 def save_settings():
     data = request.get_json()
 
-    s = Settings.query.first()
-    if not s:
-        s = Settings()
-
+    s = Settings.query.first() or Settings()
     s.data = json.dumps(data)
 
     db.session.add(s)
@@ -67,171 +64,195 @@ def save_settings():
 # ---------------- HOLIDAYS ----------------
 @app.route("/api/holidays")
 def get_holidays():
-    return jsonify([h.date for h in Holiday.query.all()])
+    try:
+        return jsonify([h.date for h in Holiday.query.all()])
+    except Exception as e:
+        print("Erreur holidays:", e)
+        return jsonify([])
 
 
 @app.route("/api/holidays", methods=["POST"])
 def add_holiday():
-    date = request.json.get("date")
+    try:
+        date = request.json.get("date")
 
-    if not date:
-        return {"error": "Invalid date"}, 400
+        if date and not Holiday.query.filter_by(date=date).first():
+            db.session.add(Holiday(date=date))
+            db.session.commit()
 
-    # éviter doublon
-    if not Holiday.query.filter_by(date=date).first():
-        db.session.add(Holiday(date=date))
-        db.session.commit()
-
-    return {"success": True}
+        return {"success": True}
+    except Exception as e:
+        print("Erreur add holiday:", e)
+        return {"success": False}
 
 
 @app.route("/api/holidays/<date>", methods=["DELETE"])
 def delete_holiday(date):
-    h = Holiday.query.filter_by(date=date).first()
+    try:
+        h = Holiday.query.filter_by(date=date).first()
+        if h:
+            db.session.delete(h)
+            db.session.commit()
 
-    if h:
-        db.session.delete(h)
-        db.session.commit()
-
-    return {"success": True}
+        return {"success": True}
+    except Exception as e:
+        print("Erreur delete holiday:", e)
+        return {"success": False}
 
 
 # ---------------- TASKS ----------------
 @app.route("/api/tasks")
 def get_tasks():
 
-    tasks = Task.query.order_by(Task.ordre).all()
+    try:
+        tasks = Task.query.order_by(Task.ordre).all()
 
-    # ✅ SETTINGS SÉCURISÉ
-    settings = Settings.query.first()
-    config = DEFAULT_CONFIG
+        # ✅ CONFIG SAFE
+        config = DEFAULT_CONFIG
+        settings = Settings.query.first()
 
-    if settings and settings.data:
-        try:
-            config = json.loads(settings.data)
-        except:
-            print("Erreur settings, default utilisé")
-
-    # ✅ HOLIDAYS
-    holidays = [h.date for h in Holiday.query.all()]
-
-    def is_holiday(date):
-        return date.strftime("%Y-%m-%d") in holidays
-
-    now = now_paris()
-    current = now
-    result = []
-
-    for t in tasks:
-
-        restant = 0 if t.etat == "Terminé" else float(t.duree or 0)
-
-        start_time = next_work_time(current, config)
-
-        # ✅ skip congés
-        while is_holiday(start_time):
-            start_time += timedelta(days=1)
-            start_time = next_work_time(start_time, config)
-
-        end_time = add_hours(start_time, restant, config) if restant > 0 else start_time
-
-        # ✅ DEADLINE FIX
-        deadline_display = "-"
-        retard = False
-
-        if t.deadline:
+        if settings and settings.data:
             try:
-                dl = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
-                end_naive = end_time.replace(tzinfo=None)
-
-                deadline_display = dl.strftime("%d/%m")
-
-                if end_naive > dl:
-                    retard = True
+                config = json.loads(settings.data)
             except Exception as e:
-                print("Erreur deadline:", t.deadline, e)
+                print("Erreur SETTINGS:", e)
 
-        result.append({
-            "id": t.id,
-            "nom": t.nom,
-            "client": t.client,
-            "etat": t.etat,
-            "duree": t.duree,
-            "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-            "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
-            "deadline": deadline_display,
-            "retard": retard
-        })
+        # ✅ HOLIDAYS SAFE
+        holidays = []
+        try:
+            holidays = [h.date for h in Holiday.query.all()]
+        except Exception as e:
+            print("Erreur HOLIDAYS:", e)
 
-        if t.etat != "Terminé":
-            current = end_time
+        def is_holiday(d):
+            return d.strftime("%Y-%m-%d") in holidays
 
-    return jsonify(result)
+        now = now_paris()
+        current = now
+        result = []
+
+        for t in tasks:
+
+            restant = 0 if t.etat == "Terminé" else float(t.duree or 0)
+
+            # ✅ START sécurisé
+            try:
+                start_time = next_work_time(current, config)
+            except Exception as e:
+                print("Erreur start_time:", e)
+                start_time = current
+
+            # ✅ skip congés
+            while is_holiday(start_time):
+                start_time += timedelta(days=1)
+
+            # ✅ END sécurisé
+            try:
+                end_time = add_hours(start_time, restant, config) if restant > 0 else start_time
+            except Exception as e:
+                print("Erreur end_time:", e)
+                end_time = start_time
+
+            # ✅ DEADLINE sécurisé
+            deadline_display = "-"
+            retard = False
+
+            if t.deadline:
+                try:
+                    dl = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
+
+                    if end_time.replace(tzinfo=None) > dl:
+                        retard = True
+
+                    deadline_display = dl.strftime("%d/%m")
+
+                except Exception as e:
+                    print("Erreur deadline:", e)
+
+            result.append({
+                "id": t.id,
+                "nom": t.nom,
+                "client": t.client,
+                "etat": t.etat,
+                "duree": t.duree,
+                "debut": start_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
+                "fin": end_time.strftime("%d/%m %H:%M") if t.etat != "Terminé" else "",
+                "deadline": deadline_display,
+                "retard": retard
+            })
+
+            if t.etat != "Terminé":
+                current = end_time
+
+        return jsonify(result)
+
+    except Exception as e:
+        print("ERREUR GLOBAL GET_TASKS:", e)
+        return jsonify([])  # ✅ ne crash jamais
 
 
 # ---------------- ADD TASK ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
 
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    nom = data.get("nom")
-    client = data.get("client")
-    duree = data.get("duree")
-    deadline = data.get("deadline")
+        nom = data.get("nom")
+        client = data.get("client")
+        duree = data.get("duree")
+        deadline = data.get("deadline")
 
-    if not nom or not duree:
-        return {"error": "Invalid data"}, 400
+        if not nom or not duree:
+            return {"error": "Invalid data"}, 400
 
-    # ✅ validation deadline
-    if deadline:
-        try:
-            datetime.fromisoformat(deadline)
-        except:
-            deadline = None
+        # ✅ validation deadline
+        if deadline:
+            try:
+                datetime.fromisoformat(deadline)
+            except:
+                deadline = None
 
-    task = Task(
-        nom=nom,
-        client=client,
-        duree=float(duree),
-        deadline=deadline,
-        etat="À faire",
-        ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
-    )
+        task = Task(
+            nom=nom,
+            client=client,
+            duree=float(duree),
+            deadline=deadline,
+            etat="À faire",
+            ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
+        )
 
-    db.session.add(task)
-    db.session.commit()
+        db.session.add(task)
+        db.session.commit()
 
-    return {"success": True}
+        return {"success": True}
+
+    except Exception as e:
+        print("Erreur add_task:", e)
+        return {"success": False}
 
 
 # ---------------- DONE ----------------
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
-    t = Task.query.get_or_404(id)
-    t.etat = "Terminé"
-    db.session.commit()
-    return {"success": True}
+    try:
+        t = Task.query.get_or_404(id)
+        t.etat = "Terminé"
+        db.session.commit()
+        return {"success": True}
+    except Exception as e:
+        print("Erreur finish:", e)
+        return {"success": False}
 
 
 # ---------------- DELETE ----------------
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
-    t = Task.query.get_or_404(id)
-    db.session.delete(t)
-    db.session.commit()
-    return {"success": True}
-
-
-# ---------------- REORDER ----------------
-@app.route("/api/tasks/reorder", methods=["POST"])
-def reorder_tasks():
-    ids = request.json
-
-    for i, task_id in enumerate(ids):
-        t = Task.query.get(task_id)
-        if t:
-            t.ordre = i
-
-    db.session.commit()
-    return {"success": True}
+    try:
+        t = Task.query.get_or_404(id)
+        db.session.delete(t)
+        db.session.commit()
+        return {"success": True}
+    except Exception as e:
+        print("Erreur delete:", e)
+        return {"success": False}
