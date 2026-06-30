@@ -8,8 +8,9 @@ import os
 
 app = Flask(__name__)
 
-# ✅ DB
+# ---------------- DATABASE ----------------
 database_url = os.environ.get("DATABASE_URL")
+
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -22,11 +23,12 @@ with app.app_context():
     db.create_all()
 
 
+# ---------------- UTILS ----------------
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
 
 
-# ---------------- UI ----------------
+# ---------------- PAGE ----------------
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -36,8 +38,12 @@ def index():
 @app.route("/api/settings")
 def get_settings():
     s = Settings.query.first()
-    if s:
-        return jsonify(json.loads(s.data))
+
+    if s and s.data:
+        try:
+            return jsonify(json.loads(s.data))
+        except:
+            pass
 
     return jsonify(DEFAULT_CONFIG)
 
@@ -45,10 +51,16 @@ def get_settings():
 @app.route("/api/settings", methods=["POST"])
 def save_settings():
     data = request.get_json()
-    s = Settings.query.first() or Settings()
+
+    s = Settings.query.first()
+    if not s:
+        s = Settings()
+
     s.data = json.dumps(data)
+
     db.session.add(s)
     db.session.commit()
+
     return {"success": True}
 
 
@@ -61,18 +73,26 @@ def get_holidays():
 @app.route("/api/holidays", methods=["POST"])
 def add_holiday():
     date = request.json.get("date")
-    if date:
+
+    if not date:
+        return {"error": "Invalid date"}, 400
+
+    # éviter doublon
+    if not Holiday.query.filter_by(date=date).first():
         db.session.add(Holiday(date=date))
         db.session.commit()
+
     return {"success": True}
 
 
 @app.route("/api/holidays/<date>", methods=["DELETE"])
 def delete_holiday(date):
     h = Holiday.query.filter_by(date=date).first()
+
     if h:
         db.session.delete(h)
         db.session.commit()
+
     return {"success": True}
 
 
@@ -81,9 +101,18 @@ def delete_holiday(date):
 def get_tasks():
 
     tasks = Task.query.order_by(Task.ordre).all()
-    settings = Settings.query.first()
 
-    config = json.loads(settings.data) if settings else DEFAULT_CONFIG
+    # ✅ SETTINGS SÉCURISÉ
+    settings = Settings.query.first()
+    config = DEFAULT_CONFIG
+
+    if settings and settings.data:
+        try:
+            config = json.loads(settings.data)
+        except:
+            print("Erreur settings, default utilisé")
+
+    # ✅ HOLIDAYS
     holidays = [h.date for h in Holiday.query.all()]
 
     def is_holiday(date):
@@ -95,7 +124,7 @@ def get_tasks():
 
     for t in tasks:
 
-        restant = 0 if t.etat == "Terminé" else t.duree
+        restant = 0 if t.etat == "Terminé" else float(t.duree or 0)
 
         start_time = next_work_time(current, config)
 
@@ -106,19 +135,21 @@ def get_tasks():
 
         end_time = add_hours(start_time, restant, config) if restant > 0 else start_time
 
-        # ✅ deadline
+        # ✅ DEADLINE FIX
         deadline_display = "-"
         retard = False
 
         if t.deadline:
             try:
-                dl = datetime.fromisoformat(t.deadline).replace(tzinfo=None)
+                dl = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
+                end_naive = end_time.replace(tzinfo=None)
+
                 deadline_display = dl.strftime("%d/%m")
 
-                if end_time.replace(tzinfo=None) > dl:
+                if end_naive > dl:
                     retard = True
-            except:
-                pass
+            except Exception as e:
+                print("Erreur deadline:", t.deadline, e)
 
         result.append({
             "id": t.id,
@@ -138,31 +169,43 @@ def get_tasks():
     return jsonify(result)
 
 
+# ---------------- ADD TASK ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
+
     data = request.get_json()
 
+    nom = data.get("nom")
+    client = data.get("client")
+    duree = data.get("duree")
     deadline = data.get("deadline")
+
+    if not nom or not duree:
+        return {"error": "Invalid data"}, 400
+
+    # ✅ validation deadline
     if deadline:
         try:
             datetime.fromisoformat(deadline)
         except:
             deadline = None
 
-    t = Task(
-        nom=data.get("nom"),
-        client=data.get("client"),
-        duree=float(data.get("duree")),
+    task = Task(
+        nom=nom,
+        client=client,
+        duree=float(duree),
         deadline=deadline,
         etat="À faire",
         ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
     )
 
-    db.session.add(t)
+    db.session.add(task)
     db.session.commit()
+
     return {"success": True}
 
 
+# ---------------- DONE ----------------
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
     t = Task.query.get_or_404(id)
@@ -171,6 +214,7 @@ def finish_task(id):
     return {"success": True}
 
 
+# ---------------- DELETE ----------------
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
     t = Task.query.get_or_404(id)
@@ -179,12 +223,15 @@ def delete_task(id):
     return {"success": True}
 
 
+# ---------------- REORDER ----------------
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
     ids = request.json
+
     for i, task_id in enumerate(ids):
         t = Task.query.get(task_id)
         if t:
             t.ordre = i
+
     db.session.commit()
     return {"success": True}
