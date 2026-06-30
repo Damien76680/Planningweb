@@ -1,5 +1,3 @@
-import os
-
 from flask import Flask, render_template, jsonify, request
 from models import db, Task
 from datetime import datetime
@@ -8,21 +6,13 @@ from utils import *
 
 app = Flask(__name__)
 
-database_url = os.environ.get("DATABASE_URL")
-
-if database_url:
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
-
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///db.sqlite3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
 with app.app_context():
     db.create_all()
-
 
 def now_paris():
     return datetime.now(ZoneInfo("Europe/Paris"))
@@ -83,6 +73,7 @@ def get_tasks():
     return jsonify(result)
 
 
+# AJOUT
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     data = request.json
@@ -108,6 +99,7 @@ def add_task():
     return {"success": True}
 
 
+# TERMINER
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
     t = Task.query.get_or_404(id)
@@ -119,6 +111,7 @@ def finish_task(id):
     return {"success": True}
 
 
+# DELETE
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
     t = Task.query.get_or_404(id)
@@ -127,6 +120,7 @@ def delete_task(id):
     return {"success": True}
 
 
+# REORDER
 @app.route("/api/tasks/reorder", methods=["POST"])
 def reorder_tasks():
     ids = request.json
