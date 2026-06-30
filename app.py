@@ -43,20 +43,24 @@ def get_tasks():
         else:
             end_time = add_hours(start_time, restant, DEFAULT_CONFIG)
 
-        # ✅ DEADLINE CORRECTE
-        deadline_display = ""
+        # ✅ DEADLINE FIX DEFINITIVE
+        deadline_display = "-"
         retard = False
 
         if t.deadline:
             try:
+                print("DEBUG deadline DB:", t.deadline)
+
                 dl = datetime.fromisoformat(t.deadline)
+
                 deadline_display = dl.strftime("%d/%m")
 
                 if end_time > dl:
                     retard = True
 
-            except:
-                deadline_display = ""
+            except Exception as e:
+                print("Erreur parsing deadline:", e)
+                deadline_display = "-"
 
         result.append({
             "id": t.id,
@@ -82,17 +86,19 @@ def add_task():
 
     nom = data.get("nom")
     duree = data.get("duree")
+    deadline = data.get("deadline")
+
+    print("DEBUG reception deadline:", deadline)
 
     if not nom or not duree:
         return {"error": "Invalid data"}, 400
 
-    # ✅ DEADLINE CORRECTE
-    deadline = data.get("deadline")
-
+    # ✅ validation timeline ISO
     if deadline:
         try:
             datetime.fromisoformat(deadline)
         except:
+            print("deadline invalide, ignorée")
             deadline = None
     else:
         deadline = None
@@ -117,11 +123,8 @@ def add_task():
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
 def finish_task(id):
     t = Task.query.get_or_404(id)
-
     t.etat = "Terminé"
-
     db.session.commit()
-
     return {"success": True}
 
 
@@ -146,3 +149,4 @@ def reorder_tasks():
 
     db.session.commit()
     return {"success": True}
+``
