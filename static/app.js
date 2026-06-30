@@ -10,25 +10,21 @@ function loadTasks() {
       data.forEach(t => {
 
         let classe = "task afaire";
-        if (t.etat === "En cours") classe = "task encours";
         if (t.etat === "Terminé") classe = "task termine";
-        if (t.etat === "Pause") classe = "task pause";
         if (t.retard) classe += " retard";
 
         html += `
         <div class="${classe}" draggable="true" data-id="${t.id}">
           <h2>${t.nom}</h2>
 
-          <p>Début: ${t.debut} | Fin: ${t.fin}</p>
-          <p>Fait: ${t.fait}h | Restant: ${t.restant}h</p>
+          <p>Début: ${t.debut}</p>
+          <p>Fin: ${t.fin}</p>
           <p>Deadline: ${t.deadline || "-"}</p>
 
           ${t.retard ? "<p style='color:red'>⚠️ RETARD</p>" : ""}
 
-          <div class="buttons">
-            <button onclick="setStatus(${t.id}, 'En cours')">▶</button>
-            <button onclick="setStatus(${t.id}, 'Pause')">⏸</button>
-            <button onclick="setStatus(${t.id}, 'Terminé')">✅</button>
+          <div>
+            <button onclick="finishTask(${t.id})">✅ Terminé</button>
             <button onclick="deleteTask(${t.id})">🗑</button>
           </div>
         </div>`;
@@ -41,7 +37,50 @@ function loadTasks() {
 }
 
 
-// ✅ DRAG & DROP
+// ✅ terminer
+function finishTask(id) {
+  fetch(`/api/tasks/${id}/done`, {
+    method: "POST"
+  }).then(loadTasks);
+}
+
+
+// ✅ supprimer
+function deleteTask(id) {
+  if (!confirm("Supprimer ?")) return;
+
+  fetch(`/api/tasks/${id}`, {
+    method: "DELETE"
+  }).then(loadTasks);
+}
+
+
+// ✅ ajout
+function addTask() {
+
+  const nom = document.getElementById("nom").value;
+  const duree = parseFloat(document.getElementById("duree").value);
+  const dl = document.getElementById("deadline").value;
+
+  let deadline = null;
+
+  if (dl && dl.length === 8) {
+    const day = dl.slice(0,2);
+    const month = dl.slice(2,4);
+    const year = dl.slice(4,8);
+
+    deadline = `${year}-${month}-${day}T00:00:00`;
+  }
+
+  fetch("/api/tasks", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({nom, duree, deadline})
+  }).then(loadTasks);
+}
+
+
+// ✅ drag & drop
 function enableDrag() {
   const items = document.querySelectorAll(".task");
 
@@ -76,57 +115,5 @@ function enableDrag() {
 }
 
 
-// ✅ SUPPRESSION
-function deleteTask(id) {
-  if (!confirm("Supprimer cette tâche ?")) return;
-
-  fetch(`/api/tasks/${id}`, {
-    method: "DELETE"
-  }).then(loadTasks);
-}
-
-
-// ✅ AJOUT AVEC DEADLINE CORRIGÉE
-function addTask() {
-
-  const nom = document.getElementById("nom").value.trim();
-  const duree = parseFloat(document.getElementById("duree").value);
-  const dl = document.getElementById("deadline").value;
-
-  if (!nom || isNaN(duree)) {
-    alert("Entrée invalide");
-    return;
-  }
-
-  let deadline = null;
-
-  if (dl && dl.length === 8) {
-    const day = dl.slice(0,2);
-    const month = dl.slice(2,4);
-    const year = dl.slice(4,8);
-
-    deadline = `${year}-${month}-${day}T00:00:00`;
-  }
-
-  fetch("/api/tasks", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({nom, duree, deadline})
-  }).then(loadTasks);
-}
-
-
-// ✅ STATUS
-function setStatus(id, etat) {
-  fetch(`/api/tasks/${id}/status`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({etat})
-  }).then(loadTasks);
-}
-
-
-// ✅ AUTO REFRESH
 setInterval(loadTasks, 3000);
 loadTasks();
-``
