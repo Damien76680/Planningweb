@@ -11,7 +11,6 @@ function loadTasks() {
         <div class="task ${t.retard ? "retard" : ""}">
 
           <span class="col-nom">${t.nom || "-"}</span>
-
           <span class="col-client">${t.client || "-"}</span>
 
           ${t.etat !== "Terminé" ? `
@@ -22,13 +21,11 @@ function loadTasks() {
           <span class="col-deadline">${t.deadline}</span>
 
           <span class="col-actions">
-
             ${i > 0 ? `<button onclick="moveUp(${t.id})">🔼</button>` : ""}
             ${i < data.length - 1 ? `<button onclick="moveDown(${t.id})">🔽</button>` : ""}
 
             ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
             <button onclick="deleteTask(${t.id})">🗑</button>
-
           </span>
 
         </div>`;
@@ -40,15 +37,13 @@ function loadTasks() {
 }
 
 
-// ---------------- ✅ ADD TASK FIX CLIENT ----------------
+// ---------------- ADD TASK ----------------
 function addTask() {
 
   const nom = document.getElementById("nom").value.trim();
   const client = document.getElementById("client").value.trim();
   const duree = parseFloat(document.getElementById("duree").value);
   let dl = document.getElementById("deadline").value.trim();
-
-  console.log("DEBUG ADD:", nom, client, duree); // ✅ debug
 
   if (!nom || isNaN(duree)) {
     alert("Erreur saisie");
@@ -66,17 +61,14 @@ function addTask() {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      nom: nom,         // ✅ correct
-      client: client,   // ✅ FIX IMPORTANT
+      nom: nom,
+      client: client,
       duree: duree,
       deadline: dl
     })
   })
   .then(r => r.json())
-  .then(res => {
-    console.log("RESPONSE:", res);
-    loadTasks();
-  })
+  .then(() => loadTasks())
   .catch(err => console.error("Erreur addTask:", err));
 }
 
@@ -101,7 +93,6 @@ function moveUp(id) {
       }
     });
 }
-
 
 function moveDown(id) {
   fetch("/api/tasks")
@@ -141,6 +132,7 @@ function loadHolidays() {
   fetch("/api/holidays")
     .then(r => r.json())
     .then(data => {
+
       let html = "";
 
       data.forEach(d => {
@@ -153,29 +145,36 @@ function loadHolidays() {
 
 
 function addHoliday() {
+
   let val = document.getElementById("holiday").value.trim();
 
-  if (/^\d{8}$/.test(val)) {
-    val = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
+  if (!/^\d{8}$/.test(val)) {
+    alert("Format JJMMAAAA");
+    return;
   }
+
+  const date = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
 
   fetch("/api/holidays", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date: val})
-  }).then(loadHolidays);
+    body: JSON.stringify({date})
+  })
+  .then(() => loadHolidays())
+  .then(() => loadTasks()); // ✅ impact planning
 }
 
 
 // ---------------- SETTINGS ----------------
 function loadSettings() {
   fetch("/api/settings")
-    .then(r=>r.json())
-    .then(data=>{
+    .then(r => r.json())
+    .then(data => {
+
       const wh = data.work_hours;
 
-      function set(day,i){
-        if(wh[day] && wh[day][i]){
+      function set(day, i) {
+        if (wh[day] && wh[day][i]) {
           document.getElementById(`${day}${i+1}_start`).value = wh[day][i][0];
           document.getElementById(`${day}${i+1}_end`).value = wh[day][i][1];
         }
@@ -192,35 +191,55 @@ function loadSettings() {
 
 function saveSettings(){
 
-  function g(day,i){
-    let s=document.getElementById(`${day}${i}_start`).value;
-    let e=document.getElementById(`${day}${i}_end`).value;
-    return s&&e?[s,e]:null;
+  function get(day, index){
+    let s = document.getElementById(`${day}${index}_start`).value;
+    let e = document.getElementById(`${day}${index}_end`).value;
+
+    if (s && e) return [s, e];
+    return null;
   }
 
-  const data={
-    work_hours:{
-      mon:[g("mon",1),g("mon",2)].filter(x=>x),
-      tue:[g("tue",1),g("tue",2)].filter(x=>x),
-      wed:[g("wed",1),g("wed",2)].filter(x=>x),
-      thu:[g("thu",1),g("thu",2)].filter(x=>x),
-      fri:[g("fri",1)].filter(x=>x),
-      sat:[],
-      sun:[]
-    }
+  const work_hours = {
+    mon: [],
+    tue: [],
+    wed: [],
+    thu: [],
+    fri: [],
+    sat: [],
+    sun: []
   };
 
-  fetch("/api/settings",{
+  if(get("mon",1)) work_hours.mon.push(get("mon",1));
+  if(get("mon",2)) work_hours.mon.push(get("mon",2));
+
+  if(get("tue",1)) work_hours.tue.push(get("tue",1));
+  if(get("tue",2)) work_hours.tue.push(get("tue",2));
+
+  if(get("wed",1)) work_hours.wed.push(get("wed",1));
+  if(get("wed",2)) work_hours.wed.push(get("wed",2));
+
+  if(get("thu",1)) work_hours.thu.push(get("thu",1));
+  if(get("thu",2)) work_hours.thu.push(get("thu",2));
+
+  if(get("fri",1)) work_hours.fri.push(get("fri",1));
+
+  const data = { work_hours };
+
+  console.log("SETTINGS ENVOYÉS :", data);
+
+  fetch("/api/settings", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data)
-  }).then(()=>alert("✅ sauvegardé"));
+    body: JSON.stringify(data)
+  })
+  .then(() => {
+    alert("✅ sauvegardé");
+    loadTasks(); // ✅ recalcul planning
+  });
 }
 
 
 // ---------------- INIT ----------------
-setInterval(loadTasks, 3000);
-
 loadTasks();
 loadHolidays();
 loadSettings();
