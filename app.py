@@ -7,7 +7,7 @@ import os
 
 app = Flask(__name__)
 
-# ---------------- DB ----------------
+# ---------------- DATABASE ----------------
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
@@ -195,22 +195,24 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # ✅ deadline format
+            # ✅ NORMALISATION DES DATES (FIX BUG)
+            end_naive = end.replace(tzinfo=None)
+
+            # ✅ deadline formatée
             deadline_display = "-"
             deadline_date = None
 
             if t.deadline:
                 try:
-                    d = datetime.fromisoformat(str(t.deadline))
-                    deadline_display = d.strftime("%d/%m")
-                    deadline_date = d
+                    deadline_date = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
+                    deadline_display = deadline_date.strftime("%d/%m")
                 except:
                     pass
 
-            # ✅ retard
+            # ✅ retard (fix complet)
             retard = False
             if deadline_date and t.etat != "Terminé":
-                if end > deadline_date:
+                if end_naive > deadline_date:
                     retard = True
 
             result.append({
@@ -235,11 +237,12 @@ def get_tasks():
         return jsonify([])
 
 
-# ✅ ✅ ✅ ADD TASK (FIX)
+# ---------------- ADD TASK ----------------
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     try:
         data = request.get_json()
+
         print("DATA:", data)
 
         deadline = None
