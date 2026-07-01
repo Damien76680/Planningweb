@@ -2,9 +2,13 @@
 <html>
 <head>
   <title>Planning</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: Arial; margin: 10px; }
+    body {
+      font-family: Arial;
+      margin: 10px;
+    }
 
     .task {
       display: flex;
@@ -15,12 +19,13 @@
       font-size: 12px;
     }
 
+    /* ✅ header colonnes */
     .header {
       font-weight: bold;
       background: #eee;
     }
 
-    /* colonnes */
+    /* ✅ colonnes compactes */
     .col-nom { width: 120px; }
     .col-client { width: 100px; }
     .col-duree { width: 50px; }
@@ -28,22 +33,17 @@
     .col-deadline { width: 80px; margin-left: 10px; }
     .col-actions { width: 140px; }
 
-    /* texte compact */
+    /* ✅ texte compact */
     .task span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* retard */
-   .task.retard {
-  background-color: #ffe5e5;   /* ✅ rouge clair */
-  border-left: 4px solid red;
-}
-
-    .task.retard button {
-      background: white;
-      color: black;
+    /* ✅ retard = rouge clair */
+    .task.retard {
+      background-color: #ffe5e5;
+      border-left: 4px solid red;
     }
 
     button {
@@ -52,7 +52,13 @@
       margin: 2px;
     }
 
-    #settingsForm div { margin: 6px 0; }
+    #settingsForm div {
+      margin: 6px 0;
+    }
+
+    input {
+      margin: 3px;
+    }
   </style>
 </head>
 
@@ -60,7 +66,7 @@
 
 <h2>Planning</h2>
 
-<!-- AJOUT -->
+<!-- ✅ AJOUT TACHE -->
 <input id="nom" placeholder="Nom">
 <input id="client" placeholder="Client">
 <input id="duree" placeholder="Durée">
@@ -83,6 +89,7 @@
 
 <hr>
 
+<!-- ✅ CONGÉS -->
 <h3>Congés</h3>
 <input id="holiday" placeholder="JJMMAAAA">
 <button onclick="addHoliday()">Ajouter</button>
@@ -90,9 +97,11 @@
 
 <hr>
 
+<!-- ✅ PARAMÈTRES -->
 <h3>Paramètres horaires</h3>
 
 <div id="settingsForm">
+
   <div>Lundi :
     <input id="mon1_start" type="time"> -
     <input id="mon1_end" type="time">
@@ -125,10 +134,12 @@
     <input id="fri1_start" type="time"> -
     <input id="fri1_end" type="time">
   </div>
+
 </div>
 
 <button onclick="saveSettings()">Sauvegarder</button>
 
+<!-- ✅ JS -->
 <script src="/static/app.js"></script>
 
 </body>
