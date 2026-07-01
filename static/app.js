@@ -1,6 +1,23 @@
+const USER =
+    new URLSearchParams(window.location.search)
+    .get("user") || "stephane";
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    const title = document.getElementById("planningTitle");
+
+    if (title) {
+        title.innerText =
+            "Planning " +
+            USER.charAt(0).toUpperCase() +
+            USER.slice(1);
+    }
+
+});
+
 // ---------------- TASKS ----------------
 function loadTasks() {
-  fetch("/api/tasks")
+  fetch(`/api/tasks?user=${USER}`)
     .then(r => r.json())
     .then(data => {
 
@@ -58,14 +75,20 @@ function addTask() {
   fetch("/api/tasks", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({nom, client, duree, deadline: dl})
+    body: JSON.stringify({
+    user: USER,
+    nom,
+    client,
+    duree,
+    deadline: dl
+})
   }).then(loadTasks);
 }
 
 
 // ---------------- EDIT ----------------
 function editTask(id){
-  fetch("/api/tasks")
+  fetch(`/api/tasks?user=${USER}`)
     .then(r=>r.json())
     .then(tasks=>{
       const t = tasks.find(x => x.id === id);
@@ -136,7 +159,7 @@ function updateOrder(){
 
 // ---------------- HOLIDAYS ----------------
 function loadHolidays(){
-  fetch("/api/holidays")
+  fetch(`/api/holidays?user=${USER}`)
     .then(r => r.json())
     .then(data => {
       const list = document.getElementById("holidayList");
@@ -171,7 +194,10 @@ function addHoliday(){
   fetch("/api/holidays", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({date: formatted})
+    body: JSON.stringify({
+    user: USER,
+    date: formatted
+})
   })
   .then(() => {
     loadHolidays();
@@ -181,7 +207,10 @@ function addHoliday(){
 
 
 function deleteHoliday(date){
-  fetch(`/api/holidays/${date}`, {method:"DELETE"})
+  fetch(`/api/holidays/${date}?user=${USER}`, {
+    method:"DELETE"
+    })
+
     .then(() => {
       loadHolidays();
       loadTasks();
