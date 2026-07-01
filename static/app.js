@@ -252,35 +252,58 @@ function loadAtelier(){
 
             const div = document.getElementById("atelierView");
 
-            let html = "";
+            let html = `
+                <div style="
+                    display:flex;
+                    gap:15px;
+                    align-items:flex-start;
+                    overflow-x:auto;
+                ">
+            `;
 
             data.forEach(user => {
 
                 html += `
-                    <h2>${user.user}</h2>
+                    <div style="
+                        min-width:350px;
+                        border:1px solid #ccc;
+                        padding:10px;
+                        background:#f8f8f8;
+                    ">
+                        <h2>${user.user}</h2>
                 `;
 
                 user.tasks.forEach(t => {
 
+                    let color = "#ffffff";
+
+                    if (t.retard)
+                        color = "#ffe5e5";
+
+                    if (t.etat === "Terminé")
+                        color = "#d4ffd4";
+
                     html += `
-                        <div class="task ${t.etat === 'Terminé' ? 'done' : ''}">
+                        <div style="
+                            background:${color};
+                            border:1px solid #ddd;
+                            padding:6px;
+                            margin-bottom:5px;
+                        ">
                             <b>${t.nom}</b><br>
-
-                Client : ${t.client}<br>
-
-                Durée : ${t.duree} h<br>
-
-                Début : ${t.debut}<br>
-
-                Fin : ${t.fin}<br>
-
-                Deadline : ${t.deadline}
+                            Client : ${t.client}<br>
+                            Durée : ${t.duree} h<br>
+                            Début : ${t.debut}<br>
+                            Fin : ${t.fin}<br>
+                            Deadline : ${t.deadline}
                         </div>
                     `;
                 });
 
-                html += "<hr>";
+                html += `</div>`;
             });
+
+            html += `</div>`;
 
             div.innerHTML = html;
         });
