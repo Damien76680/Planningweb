@@ -1,6 +1,7 @@
 const USER =
     new URLSearchParams(window.location.search)
     .get("user") || "stephane";
+console.log("USER =", USER);
 
 window.addEventListener("DOMContentLoaded", () => {
 
