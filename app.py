@@ -44,6 +44,7 @@ def get_settings():
         except:
             pass
 
+    # ✅ config par défaut
     return jsonify({
         "work_hours": {
             "mon": [["07:30","12:30"],["13:30","16:00"]],
@@ -109,6 +110,7 @@ def calculate_planning(start, duration, work_hours, holidays):
 
     while remaining > 0:
 
+        # ✅ skip congé
         if is_holiday(current):
             current += timedelta(days=1)
             current = current.replace(hour=7, minute=30)
@@ -117,6 +119,7 @@ def calculate_planning(start, duration, work_hours, holidays):
         day = current.strftime("%a").lower()[:3]
         slots = work_hours.get(day, [])
 
+        # ✅ pas de travail ce jour → lendemain
         if not slots:
             current += timedelta(days=1)
             current = current.replace(hour=7, minute=30)
@@ -161,17 +164,26 @@ def get_tasks():
         tasks = Task.query.order_by(Task.ordre).all()
         holidays = [h.date for h in Holiday.query.all()]
 
-        # horaires
-        work_hours = get_settings().json["work_hours"]
+        # ✅ RECUPERATION HORAIRES CORRECTE
+        work_hours = {
+            "mon": [["07:30","12:30"],["13:30","16:00"]],
+            "tue": [["07:30","12:30"],["13:30","16:00"]],
+            "wed": [["07:30","12:30"],["13:30","16:00"]],
+            "thu": [["07:30","12:30"],["13:30","16:00"]],
+            "fri": [["07:30","12:30"]],
+            "sat": [],
+            "sun": []
+        }
 
         settings = Settings.query.first()
+
         if settings and settings.data:
             try:
                 user = json.loads(settings.data)
                 if "work_hours" in user:
                     work_hours = user["work_hours"]
-            except:
-                pass
+            except Exception as e:
+                print("Erreur settings:", e)
 
         current = now()
         result = []
@@ -187,7 +199,7 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # ✅ deadline formatée
+            # ✅ DEADLINE FORMATTE
             deadline_display = "-"
             deadline_date = None
 
@@ -199,7 +211,7 @@ def get_tasks():
                 except:
                     pass
 
-            # ✅ ✅ RETARD
+            # ✅ RETARD
             retard = False
             if deadline_date and t.etat != "Terminé":
                 if end > deadline_date:
@@ -223,5 +235,5 @@ def get_tasks():
         return jsonify(result)
 
     except Exception as e:
-        print("ERREUR:", e)
+        print("ERREUR TASKS:", e)
         return jsonify([])
