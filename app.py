@@ -60,13 +60,10 @@ def get_settings():
 @app.route("/api/settings", methods=["POST"])
 def save_settings():
     data = request.get_json()
-
     s = Settings.query.first() or Settings()
     s.data = json.dumps(data)
-
     db.session.add(s)
     db.session.commit()
-
     return {"success": True}
 
 
@@ -79,22 +76,18 @@ def get_holidays():
 @app.route("/api/holidays", methods=["POST"])
 def add_holiday():
     date = request.json.get("date")
-
     if date and not Holiday.query.filter_by(date=date).first():
         db.session.add(Holiday(date=date))
         db.session.commit()
-
     return {"success": True}
 
 
 @app.route("/api/holidays/<date>", methods=["DELETE"])
 def delete_holiday(date):
     h = Holiday.query.filter_by(date=date).first()
-
     if h:
         db.session.delete(h)
         db.session.commit()
-
     return {"success": True}
 
 
@@ -161,7 +154,7 @@ def get_tasks():
         tasks = Task.query.order_by(Task.ordre).all()
         holidays = [h.date for h in Holiday.query.all()]
 
-        # ✅ horaires
+        # horaires
         work_hours = {
             "mon": [["07:30","12:30"],["13:30","16:00"]],
             "tue": [["07:30","12:30"],["13:30","16:00"]],
@@ -179,7 +172,7 @@ def get_tasks():
                 if "work_hours" in user:
                     work_hours = user["work_hours"]
             except:
-                print("Erreur settings")
+                pass
 
         current = now()
         result = []
@@ -195,10 +188,10 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # ✅ NORMALISATION DES DATES (FIX BUG)
+            # ✅ FIX TIMEZONE
             end_naive = end.replace(tzinfo=None)
 
-            # ✅ deadline formatée
+            # deadline
             deadline_display = "-"
             deadline_date = None
 
@@ -209,7 +202,7 @@ def get_tasks():
                 except:
                     pass
 
-            # ✅ retard (fix complet)
+            # ✅ retard
             retard = False
             if deadline_date and t.etat != "Terminé":
                 if end_naive > deadline_date:
@@ -243,8 +236,6 @@ def add_task():
     try:
         data = request.get_json()
 
-        print("DATA:", data)
-
         deadline = None
         if data.get("deadline"):
             try:
@@ -264,13 +255,31 @@ def add_task():
         db.session.add(task)
         db.session.commit()
 
-        print("✅ TACHE AJOUTEE")
-
         return {"success": True}
 
     except Exception as e:
-        print("❌ ERREUR ADD TASK:", e)
+        print("ERREUR ADD:", e)
         return {"success": False}
+
+
+# ✅ ✅ ✅ EDIT TASK
+@app.route("/api/tasks/<int:id>/edit", methods=["POST"])
+def edit_task(id):
+    t = Task.query.get_or_404(id)
+    data = request.get_json()
+
+    t.nom = data.get("nom")
+    t.client = data.get("client")
+    t.duree = float(data.get("duree", t.duree))
+
+    if data.get("deadline") and len(data["deadline"]) == 8:
+        try:
+            t.deadline = datetime.strptime(data["deadline"], "%d%m%Y")
+        except:
+            pass
+
+    db.session.commit()
+    return {"success": True}
 
 
 # ---------------- DELETE ----------------
