@@ -44,7 +44,6 @@ def get_settings():
         except:
             pass
 
-    # ✅ valeur par défaut
     return jsonify({
         "work_hours": {
             "mon": [["07:30","12:30"],["13:30","16:00"]],
@@ -103,7 +102,7 @@ def delete_holiday(date):
     return {"success": True}
 
 
-# ---------------- TASK CALCULATION ----------------
+# ---------------- PLANNING ----------------
 def calculate_planning(start, duration, work_hours, holidays):
 
     def is_holiday(d):
@@ -114,7 +113,6 @@ def calculate_planning(start, duration, work_hours, holidays):
 
     while remaining > 0:
 
-        # ✅ skip jours OFF
         if is_holiday(current):
             current += timedelta(days=1)
             current = current.replace(hour=7, minute=30)
@@ -132,8 +130,8 @@ def calculate_planning(start, duration, work_hours, holidays):
 
         for s, e in slots:
 
-            h1,m1 = map(int,s.split(":"))
-            h2,m2 = map(int,e.split(":"))
+            h1, m1 = map(int, s.split(":"))
+            h2, m2 = map(int, e.split(":"))
 
             slot_start = current.replace(hour=h1, minute=m1)
             slot_end = current.replace(hour=h2, minute=m2)
@@ -148,7 +146,6 @@ def calculate_planning(start, duration, work_hours, holidays):
                 if remaining <= available:
                     current += timedelta(hours=remaining)
                     return current
-
                 else:
                     remaining -= available
                     current = slot_end
@@ -166,12 +163,20 @@ def calculate_planning(start, duration, work_hours, holidays):
 def get_tasks():
     try:
         tasks = Task.query.order_by(Task.ordre).all()
-
         holidays = [h.date for h in Holiday.query.all()]
 
-        # ✅ récupération horaires
-        config = get_settings().json
-        work_hours = config["work_hours"]
+        # ✅ récupérer horaires
+        settings = Settings.query.first()
+
+        work_hours = get_settings().json["work_hours"]
+
+        if settings and settings.data:
+            try:
+                user = json.loads(settings.data)
+                if "work_hours" in user:
+                    work_hours = user["work_hours"]
+            except:
+                pass
 
         current = now()
         result = []
@@ -182,11 +187,20 @@ def get_tasks():
 
             start = current
 
-            # ✅ skip congé
             while start.strftime("%Y-%m-%d") in holidays:
                 start += timedelta(days=1)
 
             end = calculate_planning(start, duration, work_hours, holidays)
+
+            # ✅ ✅ ✅ FORMAT DEADLINE
+            deadline = "-"
+
+            if t.deadline:
+                try:
+                    d = datetime.fromisoformat(str(t.deadline))
+                    deadline = d.strftime("%d/%m")
+                except:
+                    deadline = "-"
 
             result.append({
                 "id": t.id,
@@ -196,7 +210,7 @@ def get_tasks():
                 "duree": t.duree,
                 "debut": start.strftime("%d/%m %H:%M"),
                 "fin": end.strftime("%d/%m %H:%M"),
-                "deadline": t.deadline or "-",
+                "deadline": deadline,
                 "retard": False
             })
 
@@ -246,7 +260,6 @@ def reorder():
             t.ordre = i
 
     db.session.commit()
-
     return {"success": True}
 
 
