@@ -19,9 +19,9 @@ class Task(db.Model):
 class Holiday(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
-    user = db.Column(db.String(50), index=True)  # ✅ AJOUT
+    user = db.Column(db.String(50), index=True)
 
-    date = db.Column(db.String, unique=True)
+    date = db.Column(db.String)
 
 
 class Settings(db.Model):
