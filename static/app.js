@@ -38,7 +38,10 @@ if (ATELIER) {
 
     document.getElementById("tasks").style.display = "none";
 
-    document.querySelector(".header").style.display = "none";
+    const header = document.querySelector(".header");
+    if (header) {
+        header.style.display = "none";
+    }
 
     loadAtelier();
 
@@ -46,18 +49,7 @@ if (ATELIER) {
 
 console.log("USER =", USER);
 
-window.addEventListener("DOMContentLoaded", () => {
 
-    const title = document.getElementById("planningTitle");
-
-    if (title) {
-        title.innerText =
-            "Planning " +
-            USER.charAt(0).toUpperCase() +
-            USER.slice(1);
-    }
-
-});
 
 // ---------------- TASKS ----------------
 function loadTasks() {
