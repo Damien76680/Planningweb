@@ -7,6 +7,8 @@ const ATELIER =
     .get("vue") === "atelier";
 window.addEventListener("DOMContentLoaded", () => {
 
+    const title = document.getElementById("planningTitle");
+
     if (ATELIER) {
 
         const admin = document.getElementById("adminPanel");
@@ -15,10 +17,17 @@ window.addEventListener("DOMContentLoaded", () => {
             admin.style.display = "none";
         }
 
-        const title = document.getElementById("planningTitle");
-
         if (title) {
             title.innerText = "Planning Atelier";
+        }
+
+    } else {
+
+        if (title) {
+            title.innerText =
+                "Planning " +
+                USER.charAt(0).toUpperCase() +
+                USER.slice(1);
         }
 
     }
