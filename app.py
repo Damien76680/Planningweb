@@ -384,17 +384,20 @@ def atelier():
 
     for u in users:
 
-        if not ucontinue
+        user_name = u[0]
+
+        if not user_name:
+            continue
 
         tasks = (
             Task.query
-            .filter_by(user=u[0])
+            .filter_by(user=user_name)
             .order_by(Task.ordre)
             .all()
         )
 
         result.append({
-            "user": u[0],
+            "user": user_name,
             "tasks": [
                 {
                     "nom": t.nom,
