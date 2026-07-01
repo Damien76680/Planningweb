@@ -74,12 +74,24 @@ def get_holidays():
 
 
 @app.route("/api/holidays", methods=["POST"])
+@app.route("/api/holidays", methods=["POST"])
 def add_holiday():
-    date = request.json.get("date")
-    if date and not Holiday.query.filter_by(date=date).first():
-        db.session.add(Holiday(date=date))
-        db.session.commit()
-    return {"success": True}
+    try:
+        data = request.get_json()
+
+        print("HOLIDAY DATA:", data)
+
+        date = data.get("date")
+
+        if date and not Holiday.query.filter_by(date=date).first():
+            db.session.add(Holiday(date=date))
+            db.session.commit()
+
+        return {"success": True}
+
+    except Exception as e:
+        print("ERREUR HOLIDAY:", e)
+        return {"success": False}
 
 
 @app.route("/api/holidays/<date>", methods=["DELETE"])
