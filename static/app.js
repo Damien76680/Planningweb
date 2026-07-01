@@ -1,6 +1,9 @@
 const USER =
     new URLSearchParams(window.location.search)
     .get("user") || "stephane";
+const ATELIER =
+    new URLSearchParams(window.location.search)
+    .get("vue") === "atelier";
 console.log("USER =", USER);
 
 window.addEventListener("DOMContentLoaded", () => {
