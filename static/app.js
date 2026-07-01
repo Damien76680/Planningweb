@@ -192,3 +192,9 @@ function deleteHoliday(date){
 // ---------------- INIT ----------------
 loadTasks();
 loadHolidays();
+
+// Rafraîchissement automatique toutes les 5 secondes
+setInterval(() => {
+    loadTasks();
+    loadHolidays();
+}, 5000);
