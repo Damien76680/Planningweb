@@ -44,7 +44,6 @@ def get_settings():
         except:
             pass
 
-    # ✅ config par défaut
     return jsonify({
         "work_hours": {
             "mon": [["07:30","12:30"],["13:30","16:00"]],
@@ -110,7 +109,7 @@ def calculate_planning(start, duration, work_hours, holidays):
 
     while remaining > 0:
 
-        # ✅ skip congé
+        # skip congé
         if is_holiday(current):
             current += timedelta(days=1)
             current = current.replace(hour=7, minute=30)
@@ -119,7 +118,6 @@ def calculate_planning(start, duration, work_hours, holidays):
         day = current.strftime("%a").lower()[:3]
         slots = work_hours.get(day, [])
 
-        # ✅ pas de travail ce jour → lendemain
         if not slots:
             current += timedelta(days=1)
             current = current.replace(hour=7, minute=30)
@@ -158,13 +156,13 @@ def calculate_planning(start, duration, work_hours, holidays):
 
 
 # ---------------- TASKS ----------------
-@app.route("/api/tasks")
+@app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     try:
         tasks = Task.query.order_by(Task.ordre).all()
         holidays = [h.date for h in Holiday.query.all()]
 
-        # ✅ RECUPERATION HORAIRES CORRECTE
+        # horaires
         work_hours = {
             "mon": [["07:30","12:30"],["13:30","16:00"]],
             "tue": [["07:30","12:30"],["13:30","16:00"]],
@@ -182,8 +180,8 @@ def get_tasks():
                 user = json.loads(settings.data)
                 if "work_hours" in user:
                     work_hours = user["work_hours"]
-            except Exception as e:
-                print("Erreur settings:", e)
+            except:
+                print("Erreur settings")
 
         current = now()
         result = []
@@ -199,7 +197,7 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # ✅ DEADLINE FORMATTE
+            # deadline
             deadline_display = "-"
             deadline_date = None
 
@@ -211,7 +209,7 @@ def get_tasks():
                 except:
                     pass
 
-            # ✅ RETARD
+            # retard
             retard = False
             if deadline_date and t.etat != "Terminé":
                 if end > deadline_date:
@@ -237,3 +235,61 @@ def get_tasks():
     except Exception as e:
         print("ERREUR TASKS:", e)
         return jsonify([])
+
+
+# ✅ ✅ ✅ ROUTE POST (IMPORTANT !!!)
+@app.route("/api/tasks", methods=["POST"])
+def add_task():
+    try:
+        data = request.get_json()
+
+        task = Task(
+            nom=data.get("nom"),
+            client=data.get("client"),
+            duree=float(data.get("duree", 1)),
+            deadline=data.get("deadline"),
+            etat="À faire",
+            ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
+        )
+
+        db.session.add(task)
+        db.session.commit()
+
+        return {"success": True}
+
+    except Exception as e:
+        print("ERREUR ADD TASK:", e)
+        return {"success": False}
+
+
+# ---------------- DELETE ----------------
+@app.route("/api/tasks/<int:id>", methods=["DELETE"])
+def delete(id):
+    t = Task.query.get_or_404(id)
+    db.session.delete(t)
+    db.session.commit()
+    return {"success": True}
+
+
+# ---------------- DONE ----------------
+@app.route("/api/tasks/<int:id>/done", methods=["POST"])
+def done(id):
+    t = Task.query.get_or_404(id)
+    t.etat = "Terminé"
+    db.session.commit()
+    return {"success": True}
+
+
+# ---------------- REORDER ----------------
+@app.route("/api/tasks/reorder", methods=["POST"])
+def reorder():
+    ids = request.get_json()
+
+    for i, tid in enumerate(ids):
+        t = Task.query.get(tid)
+        if t:
+            t.ordre = i
+
+    db.session.commit()
+
+    return {"success": True}
