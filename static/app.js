@@ -15,7 +15,10 @@ function loadTasks() {
       data.forEach(t => {
 
         const div = document.createElement("div");
-        div.className = "task" + (t.retard ? " retard" : "");
+        div.className = "task";
+
+        if (t.retard) div.className += " retard";
+        if (t.etat === "Terminé") div.className += " done";
         div.draggable = true;
         div.dataset.id = t.id;
 
