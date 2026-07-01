@@ -257,11 +257,26 @@ function loadAtelier(){
 
 
 // ---------------- INIT ----------------
-loadTasks();
-loadHolidays();
+if (ATELIER) {
+
+    document.getElementById("tasks").style.display = "none";
+
+    loadAtelier();
+
+} else {
+
+    loadTasks();
+    loadHolidays();
+}
 
 // Rafraîchissement automatique toutes les 5 secondes
 setInterval(() => {
-    loadTasks();
-    loadHolidays();
+
+    if (ATELIER) {
+        loadAtelier();
+    } else {
+        loadTasks();
+        loadHolidays();
+    }
+
 }, 5000);
