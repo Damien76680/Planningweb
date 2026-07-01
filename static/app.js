@@ -221,6 +221,40 @@ function deleteHoliday(date){
     });
 }
 
+function loadAtelier(){
+
+    fetch("/api/atelier")
+        .then(r => r.json())
+        .then(data => {
+
+            const div = document.getElementById("atelierView");
+
+            let html = "";
+
+            data.forEach(user => {
+
+                html += `
+                    <h2>${user.user}</h2>
+                `;
+
+                user.tasks.forEach(t => {
+
+                    html += `
+                        <div class="task ${t.etat === 'Terminé' ? 'done' : ''}">
+                            <b>${t.nom}</b>
+                            - ${t.client}
+                            (${t.duree}h)
+                        </div>
+                    `;
+                });
+
+                html += "<hr>";
+            });
+
+            div.innerHTML = html;
+        });
+}
+
 
 // ---------------- INIT ----------------
 loadTasks();
