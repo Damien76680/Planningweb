@@ -1,9 +1,30 @@
 const USER =
     new URLSearchParams(window.location.search)
     .get("user") || "stephane";
+
 const ATELIER =
     new URLSearchParams(window.location.search)
     .get("vue") === "atelier";
+window.addEventListener("DOMContentLoaded", () => {
+
+    if (ATELIER) {
+
+        const admin = document.getElementById("adminPanel");
+
+        if (admin) {
+            admin.style.display = "none";
+        }
+
+        const title = document.getElementById("planningTitle");
+
+        if (title) {
+            title.innerText = "Planning Atelier";
+        }
+
+    }
+
+});
+
 console.log("USER =", USER);
 
 window.addEventListener("DOMContentLoaded", () => {
