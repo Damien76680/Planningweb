@@ -25,7 +25,7 @@
       background: #eee;
     }
 
-    /* ✅ colonnes compactes */
+    /* ✅ colonnes */
     .col-nom { width: 120px; }
     .col-client { width: 100px; }
     .col-duree { width: 50px; }
@@ -33,14 +33,14 @@
     .col-deadline { width: 80px; margin-left: 10px; }
     .col-actions { width: 140px; }
 
-    /* ✅ texte compact */
+    /* ✅ éviter retour ligne */
     .task span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* ✅ retard = rouge clair */
+    /* ✅ RETARD (rouge clair) */
     .task.retard {
       background-color: #ffe5e5;
       border-left: 4px solid red;
@@ -139,7 +139,8 @@
 
 <button onclick="saveSettings()">Sauvegarder</button>
 
-<!-- ✅ JS -->
+
+<!-- ✅ ✅ ✅ CORRECTION CRITIQUE ICI -->
 <script src="/static/app.js"></script>
 
 </body>
