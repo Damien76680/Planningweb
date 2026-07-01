@@ -71,11 +71,13 @@ function loadTasks() {
           <span class="col-temps">${t.debut} → ${t.fin}</span>
           <span class="col-deadline">${t.deadline}</span>
 
-          <span class="col-actions">
-            <button onclick="editTask(${t.id})">✏️</button>
-            <button onclick="finishTask(${t.id})">✅</button>
-            <button onclick="deleteTask(${t.id})">🗑</button>
-          </span>
+          ${ATELIER ? "" : `
+    <span class="col-actions">
+    <button onclick="editTask(${t.id})">✏️</button>
+    <button onclick="finishTask(${t.id})">✅</button>
+    <button onclick="deleteTask(${t.id})">🗑</button>
+</span>
+`}
         `;
 
         container.appendChild(div);
