@@ -77,7 +77,6 @@ def save_settings():
     db.session.commit()
 
     return {"success": True}
-``
 
 # ---------------- HOLIDAYS ----------------
 @app.route("/api/holidays")
