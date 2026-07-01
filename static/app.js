@@ -1,4 +1,4 @@
-// ---------------- LOAD TASKS ----------------
+// ---------------- TASKS ----------------
 function loadTasks() {
   fetch("/api/tasks")
     .then(r => r.json())
@@ -6,44 +6,42 @@ function loadTasks() {
 
       console.log("TASKS:", data); // ✅ debug
 
-      let html = "";
+      const container = document.getElementById("tasks");
+      container.innerHTML = "";
 
       if (!data || data.length === 0) {
-        html = "<p>⚠️ Aucune tâche</p>";
-      } else {
-
-        data.forEach((t, i) => {
-
-          html += `
-          <div class="task ${t.retard ? "retard" : ""}">
-
-            <span class="col-nom">${t.nom || "-"}</span>
-            <span class="col-client">${t.client || "-"}</span>
-            <span class="col-duree">
-              ${t.etat !== "Terminé" ? t.duree + "h" : "✅"}
-            </span>
-
-            <span class="col-temps">${t.debut} → ${t.fin}</span>
-
-            <span class="col-deadline">${t.deadline || "-"}</span>
-
-            <span class="col-actions">
-              ${i > 0 ? `<button onclick="moveUp(${t.id})">🔼</button>` : ""}
-              ${i < data.length - 1 ? `<button onclick="moveDown(${t.id})">🔽</button>` : ""}
-
-              ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
-              <button onclick="deleteTask(${t.id})">🗑</button>
-            </span>
-
-          </div>`;
-        });
+        container.innerHTML = "<p>⚠️ Aucune tâche</p>";
+        return;
       }
 
-      document.getElementById("tasks").innerHTML = html;
+      data.forEach((t, i) => {
+
+        const div = document.createElement("div");
+        div.className = "task" + (t.retard ? " retard" : "");
+
+        div.innerHTML = `
+          <span class="col-nom">${t.nom || "-"}</span>
+          <span class="col-client">${t.client || "-"}</span>
+          <span class="col-duree">${t.etat !== "Terminé" ? t.duree + "h" : "✅"}</span>
+          <span class="col-temps">${t.debut} → ${t.fin}</span>
+          <span class="col-deadline">${t.deadline || "-"}</span>
+          <span class="col-actions">
+
+            ${i > 0 ? `<button onclick="moveUp(${t.id})">🔼</button>` : ""}
+            ${i < data.length - 1 ? `<button onclick="moveDown(${t.id})">🔽</button>` : ""}
+
+            ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
+            <button onclick="deleteTask(${t.id})">🗑</button>
+
+          </span>
+        `;
+
+        container.appendChild(div);
+      });
     })
     .catch(err => {
       console.error("Erreur loadTasks:", err);
-      document.getElementById("tasks").innerHTML = "❌ Erreur chargement tâches";
+      document.getElementById("tasks").innerHTML = "❌ Erreur chargement";
     });
 }
 
@@ -61,7 +59,6 @@ function addTask() {
     return;
   }
 
-  // ✅ format date
   if (/^\d{8}$/.test(dl)) {
     dl = `${dl.slice(4,8)}-${dl.slice(2,4)}-${dl.slice(0,2)}T00:00:00`;
   } else {
@@ -74,21 +71,19 @@ function addTask() {
     body: JSON.stringify({nom, client, duree, deadline: dl})
   })
   .then(r => r.json())
-  .then(() => {
-    loadTasks();
-  })
+  .then(() => loadTasks())
   .catch(err => console.error("Erreur addTask:", err));
 }
 
 
-// ---------------- DELETE TASK ----------------
+// ---------------- DELETE ----------------
 function deleteTask(id){
   fetch(`/api/tasks/${id}`, {method:"DELETE"})
     .then(() => loadTasks());
 }
 
 
-// ---------------- FINISH TASK ----------------
+// ---------------- FINISH ----------------
 function finishTask(id){
   fetch(`/api/tasks/${id}/done`, {method:"POST"})
     .then(() => loadTasks());
@@ -103,7 +98,7 @@ function moveUp(id){
       const ids = tasks.map(t=>t.id);
       const i = ids.indexOf(id);
 
-      if(i>0){
+      if(i > 0){
         [ids[i-1], ids[i]] = [ids[i], ids[i-1]];
 
         fetch("/api/tasks/reorder",{
@@ -122,7 +117,7 @@ function moveDown(id){
       const ids = tasks.map(t=>t.id);
       const i = ids.indexOf(id);
 
-      if(i<ids.length - 1){
+      if(i < ids.length - 1){
         [ids[i], ids[i+1]] = [ids[i+1], ids[i]];
 
         fetch("/api/tasks/reorder",{
@@ -145,10 +140,11 @@ function loadHolidays(){
 
       data.forEach(d=>{
         html += `
-        <li>
-          ${d}
-          <button onclick="deleteHoliday('${d}')">❌</button>
-        </li>`;
+          <li>
+            ${d}
+            <button onclick="deleteHoliday('${d}')">❌</button>
+          </li>
+        `;
       });
 
       document.getElementById("holidayList").innerHTML = html;
@@ -216,7 +212,7 @@ function saveSettings(){
   function g(day,i){
     let s = document.getElementById(`${day}${i}_start`).value;
     let e = document.getElementById(`${day}${i}_end`).value;
-    return s && e ? [s,e] : null;
+    return s && e ? [s, e] : null;
   }
 
   const data = {
