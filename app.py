@@ -78,17 +78,13 @@ def get_holidays():
 
 @app.route("/api/holidays", methods=["POST"])
 def add_holiday():
-    try:
-        date = request.json.get("date")
+    date = request.json.get("date")
 
-        if date and not Holiday.query.filter_by(date=date).first():
-            db.session.add(Holiday(date=date))
-            db.session.commit()
+    if date and not Holiday.query.filter_by(date=date).first():
+        db.session.add(Holiday(date=date))
+        db.session.commit()
 
-        return {"success": True}
-    except Exception as e:
-        print("Erreur holiday:", e)
-        return {"success": False}
+    return {"success": True}
 
 
 @app.route("/api/holidays/<date>", methods=["DELETE"])
@@ -165,11 +161,10 @@ def get_tasks():
         tasks = Task.query.order_by(Task.ordre).all()
         holidays = [h.date for h in Holiday.query.all()]
 
-        # ✅ récupérer horaires
-        settings = Settings.query.first()
-
+        # horaires
         work_hours = get_settings().json["work_hours"]
 
+        settings = Settings.query.first()
         if settings and settings.data:
             try:
                 user = json.loads(settings.data)
@@ -192,7 +187,7 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # ✅ FORMAT DEADLINE
+            # ✅ deadline formatée
             deadline_display = "-"
             deadline_date = None
 
@@ -202,9 +197,9 @@ def get_tasks():
                     deadline_display = d.strftime("%d/%m")
                     deadline_date = d
                 except:
-                    deadline_display = None
+                    pass
 
-            # ✅ ✅ ✅ CALCUL RETARD (IMPORTANT)
+            # ✅ ✅ RETARD
             retard = False
             if deadline_date and t.etat != "Terminé":
                 if end > deadline_date:
@@ -219,7 +214,7 @@ def get_tasks():
                 "debut": start.strftime("%d/%m %H:%M"),
                 "fin": end.strftime("%d/%m %H:%M"),
                 "deadline": deadline_display,
-                "retard": retard   # ✅ utilisé par le frontend
+                "retard": retard
             })
 
             if t.etat != "Terminé":
@@ -228,62 +223,5 @@ def get_tasks():
         return jsonify(result)
 
     except Exception as e:
-        print("ERREUR TASKS:", e)
+        print("ERREUR:", e)
         return jsonify([])
-
-
-# ---------------- ADD TASK ----------------
-@app.route("/api/tasks", methods=["POST"])
-def add_task():
-    try:
-        data = request.get_json()
-
-        t = Task(
-            nom=data.get("nom"),
-            client=data.get("client"),
-            duree=float(data.get("duree", 1)),
-            deadline=data.get("deadline"),
-            etat="À faire",
-            ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
-        )
-
-        db.session.add(t)
-        db.session.commit()
-
-        return {"success": True}
-
-    except Exception as e:
-        print("ERREUR ADD:", e)
-        return {"success": False}
-
-
-# ---------------- REORDER ----------------
-@app.route("/api/tasks/reorder", methods=["POST"])
-def reorder():
-    ids = request.get_json()
-
-    for i, tid in enumerate(ids):
-        t = Task.query.get(tid)
-        if t:
-            t.ordre = i
-
-    db.session.commit()
-    return {"success": True}
-
-
-# ---------------- DONE ----------------
-@app.route("/api/tasks/<int:id>/done", methods=["POST"])
-def done(id):
-    t = Task.query.get_or_404(id)
-    t.etat = "Terminé"
-    db.session.commit()
-    return {"success": True}
-
-
-# ---------------- DELETE ----------------
-@app.route("/api/tasks/<int:id>", methods=["DELETE"])
-def delete(id):
-    t = Task.query.get_or_404(id)
-    db.session.delete(t)
-    db.session.commit()
-    return {"success": True}
