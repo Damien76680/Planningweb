@@ -396,17 +396,89 @@ def atelier():
             .all()
         )
 
+        holidays = [
+            h.date
+            for h in Holiday.query.filter_by(user=user_name).all()
+        ]
+
+        work_hours = {
+            "mon": [["07:30","12:30"],["13:30","16:00"]],
+            "tue": [["07:30","12:30"],["13:30","16:00"]],
+            "wed": [["07:30","12:30"],["13:30","16:00"]],
+            "thu": [["07:30","12:30"],["13:30","16:00"]],
+            "fri": [["07:30","12:30"]],
+            "sat": [],
+            "sun": []
+        }
+
+        settings = Settings.query.filter_by(user=user_name).first()
+
+        if settings and settings.data:
+            try:
+                s = json.loads(settings.data)
+                if "work_hours" in s:
+                    work_hours = s["work_hours"]
+            except:
+                pass
+
+        current = now()
+
+        user_tasks = []
+
+        for t in tasks:
+
+            duration = 0 if t.etat == "Terminé" else float(t.duree or 0)
+
+            start = current
+
+            while start.strftime("%Y-%m-%d") in holidays:
+                start += timedelta(days=1)
+
+            end = calculate_planning(
+                start,
+                duration,
+                work_hours,
+                holidays
+            )
+
+            end_naive = end.replace(tzinfo=None)
+
+            deadline_display = "-"
+            deadline_date = None
+
+            if t.deadline:
+                try:
+                    deadline_date = datetime.fromisoformat(
+                        str(t.deadline)
+                    ).replace(tzinfo=None)
+
+                    deadline_display = deadline_date.strftime("%d/%m")
+
+                except:
+                    pass
+
+            retard = False
+
+            if deadline_date and t.etat != "Terminé":
+                retard = end_naive > deadline_date
+
+            user_tasks.append({
+                "nom": t.nom,
+                "client": t.client,
+                "etat": t.etat,
+                "duree": t.duree,
+                "debut": start.strftime("%d/%m %H:%M"),
+                "fin": end.strftime("%d/%m %H:%M"),
+                "deadline": deadline_display,
+                "retard": retard
+            })
+
+            if t.etat != "Terminé":
+                current = end
+
         result.append({
             "user": user_name,
-            "tasks": [
-                {
-                    "nom": t.nom,
-                    "client": t.client,
-                    "etat": t.etat,
-                    "duree": t.duree
-                }
-                for t in tasks
-            ]
+            "tasks": user_tasks
         })
 
     return jsonify(result)
