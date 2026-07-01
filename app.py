@@ -7,7 +7,7 @@ import os
 
 app = Flask(__name__)
 
-# ---------------- DATABASE ----------------
+# ---------------- DB ----------------
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
@@ -109,7 +109,6 @@ def calculate_planning(start, duration, work_hours, holidays):
 
     while remaining > 0:
 
-        # skip congé
         if is_holiday(current):
             current += timedelta(days=1)
             current = current.replace(hour=7, minute=30)
@@ -130,23 +129,23 @@ def calculate_planning(start, duration, work_hours, holidays):
             h1, m1 = map(int, s.split(":"))
             h2, m2 = map(int, e.split(":"))
 
-            slot_start = current.replace(hour=h1, minute=m1)
-            slot_end = current.replace(hour=h2, minute=m2)
+            start_slot = current.replace(hour=h1, minute=m1)
+            end_slot = current.replace(hour=h2, minute=m2)
 
-            if current < slot_start:
-                current = slot_start
+            if current < start_slot:
+                current = start_slot
 
-            if slot_start <= current < slot_end:
+            if start_slot <= current < end_slot:
 
-                available = (slot_end - current).total_seconds() / 3600
+                available = (end_slot - current).total_seconds() / 3600
 
                 if remaining <= available:
                     current += timedelta(hours=remaining)
                     return current
-                else:
-                    remaining -= available
-                    current = slot_end
-                    progressed = True
+
+                remaining -= available
+                current = end_slot
+                progressed = True
 
         if not progressed:
             current += timedelta(days=1)
@@ -162,7 +161,7 @@ def get_tasks():
         tasks = Task.query.order_by(Task.ordre).all()
         holidays = [h.date for h in Holiday.query.all()]
 
-        # horaires
+        # ✅ horaires
         work_hours = {
             "mon": [["07:30","12:30"],["13:30","16:00"]],
             "tue": [["07:30","12:30"],["13:30","16:00"]],
@@ -174,7 +173,6 @@ def get_tasks():
         }
 
         settings = Settings.query.first()
-
         if settings and settings.data:
             try:
                 user = json.loads(settings.data)
@@ -197,7 +195,7 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # deadline
+            # ✅ deadline format
             deadline_display = "-"
             deadline_date = None
 
@@ -209,7 +207,7 @@ def get_tasks():
                 except:
                     pass
 
-            # retard
+            # ✅ retard
             retard = False
             if deadline_date and t.etat != "Terminé":
                 if end > deadline_date:
@@ -237,17 +235,25 @@ def get_tasks():
         return jsonify([])
 
 
-# ✅ ✅ ✅ ROUTE POST (IMPORTANT !!!)
+# ✅ ✅ ✅ ADD TASK (FIX)
 @app.route("/api/tasks", methods=["POST"])
 def add_task():
     try:
         data = request.get_json()
+        print("DATA:", data)
+
+        deadline = None
+        if data.get("deadline"):
+            try:
+                deadline = datetime.fromisoformat(data.get("deadline"))
+            except:
+                pass
 
         task = Task(
             nom=data.get("nom"),
             client=data.get("client"),
             duree=float(data.get("duree", 1)),
-            deadline=data.get("deadline"),
+            deadline=deadline,
             etat="À faire",
             ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
         )
@@ -255,16 +261,18 @@ def add_task():
         db.session.add(task)
         db.session.commit()
 
+        print("✅ TACHE AJOUTEE")
+
         return {"success": True}
 
     except Exception as e:
-        print("ERREUR ADD TASK:", e)
+        print("❌ ERREUR ADD TASK:", e)
         return {"success": False}
 
 
 # ---------------- DELETE ----------------
 @app.route("/api/tasks/<int:id>", methods=["DELETE"])
-def delete(id):
+def delete_task(id):
     t = Task.query.get_or_404(id)
     db.session.delete(t)
     db.session.commit()
@@ -273,7 +281,7 @@ def delete(id):
 
 # ---------------- DONE ----------------
 @app.route("/api/tasks/<int:id>/done", methods=["POST"])
-def done(id):
+def finish_task(id):
     t = Task.query.get_or_404(id)
     t.etat = "Terminé"
     db.session.commit()
@@ -291,5 +299,4 @@ def reorder():
             t.ordre = i
 
     db.session.commit()
-
     return {"success": True}
