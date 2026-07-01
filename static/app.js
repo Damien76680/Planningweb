@@ -25,6 +25,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
 });
 
+if (ATELIER) {
+
+    document.getElementById("tasks").style.display = "none";
+
+    document.querySelector(".header").style.display = "none";
+
+    loadAtelier();
+
+}
+
 console.log("USER =", USER);
 
 window.addEventListener("DOMContentLoaded", () => {
