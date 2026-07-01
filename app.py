@@ -36,7 +36,10 @@ def index():
 # ---------------- SETTINGS ----------------
 @app.route("/api/settings")
 def get_settings():
-    s = Settings.query.first()
+
+    user = request.args.get("user", "stephane")
+
+    s = Settings.query.filter_by(user=user).first()
 
     if s and s.data:
         try:
@@ -56,24 +59,40 @@ def get_settings():
         }
     })
 
-
 @app.route("/api/settings", methods=["POST"])
 def save_settings():
+
+    user = request.args.get("user", "stephane")
+
     data = request.get_json()
-    s = Settings.query.first() or Settings()
+
+    s = Settings.query.filter_by(user=user).first()
+
+    if not s:
+        s = Settings(user=user)
+
     s.data = json.dumps(data)
+
     db.session.add(s)
     db.session.commit()
-    return {"success": True}
 
+    return {"success": True}
+``
 
 # ---------------- HOLIDAYS ----------------
 @app.route("/api/holidays")
 def get_holidays():
-    return jsonify([h.date for h in Holiday.query.all()])
+
+    user = request.args.get("user", "stephane")
+
+    return jsonify([
+        h.date
+        for h in Holiday.query.filter_by(user=user).all()
+    ])
 
 
-@app.route("/api/holidays", methods=["POST"])
+
+
 @app.route("/api/holidays", methods=["POST"])
 def add_holiday():
     try:
@@ -82,9 +101,17 @@ def add_holiday():
         print("HOLIDAY DATA:", data)
 
         date = data.get("date")
+        user = data.get("user")
 
-        if date and not Holiday.query.filter_by(date=date).first():
-            db.session.add(Holiday(date=date))
+        if date and not Holiday.query.filter_by(user=user, date=date).first():
+
+            db.session.add(
+                Holiday(
+                    user=user,
+                    date=date
+                )
+            )
+
             db.session.commit()
 
         return {"success": True}
@@ -96,12 +123,19 @@ def add_holiday():
 
 @app.route("/api/holidays/<date>", methods=["DELETE"])
 def delete_holiday(date):
-    h = Holiday.query.filter_by(date=date).first()
+
+    user = request.args.get("user", "stephane")
+
+    h = Holiday.query.filter_by(
+        user=user,
+        date=date
+    ).first()
+
     if h:
         db.session.delete(h)
         db.session.commit()
-    return {"success": True}
 
+    return {"success": True}
 
 # ---------------- PLANNING ----------------
 def calculate_planning(start, duration, work_hours, holidays):
@@ -163,8 +197,18 @@ def calculate_planning(start, duration, work_hours, holidays):
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     try:
-        tasks = Task.query.order_by(Task.ordre).all()
-        holidays = [h.date for h in Holiday.query.all()]
+        user = request.args.get("user", "stephane")
+
+        tasks = (
+            Task.query
+            .filter_by(user=user)
+            .order_by(Task.ordre)
+            .all()
+        )
+        holidays = [
+    h.date
+    for h in Holiday.query.filter_by(user=user).all()
+]
 
         # horaires
         work_hours = {
@@ -177,7 +221,7 @@ def get_tasks():
             "sun": []
         }
 
-        settings = Settings.query.first()
+        settings = Settings.query.filter_by(user=user).first()
         if settings and settings.data:
             try:
                 user = json.loads(settings.data)
@@ -256,6 +300,7 @@ def add_task():
                 pass
 
         task = Task(
+            user=data.get("user"),
             nom=data.get("nom"),
             client=data.get("client"),
             duree=float(data.get("duree", 1)),
