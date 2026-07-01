@@ -292,6 +292,8 @@ def add_task():
     try:
         data = request.get_json()
 
+        print("DATA RECUE =", data)
+
         deadline = None
         if data.get("deadline"):
             try:
@@ -306,7 +308,11 @@ def add_task():
             duree=float(data.get("duree", 1)),
             deadline=deadline,
             etat="À faire",
-            ordre=(db.session.query(db.func.max(Task.ordre)).scalar() or 0) + 1
+            ordre=(
+                db.session.query(db.func.max(Task.ordre))
+                .filter(Task.user == data.get("user"))
+                .scalar() or 0
+            ) + 1
         )
 
         db.session.add(task)
