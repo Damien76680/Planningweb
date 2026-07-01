@@ -192,15 +192,23 @@ def get_tasks():
 
             end = calculate_planning(start, duration, work_hours, holidays)
 
-            # ✅ ✅ ✅ FORMAT DEADLINE
-            deadline = "-"
+            # ✅ FORMAT DEADLINE
+            deadline_display = "-"
+            deadline_date = None
 
             if t.deadline:
                 try:
                     d = datetime.fromisoformat(str(t.deadline))
-                    deadline = d.strftime("%d/%m")
+                    deadline_display = d.strftime("%d/%m")
+                    deadline_date = d
                 except:
-                    deadline = "-"
+                    deadline_display = None
+
+            # ✅ ✅ ✅ CALCUL RETARD (IMPORTANT)
+            retard = False
+            if deadline_date and t.etat != "Terminé":
+                if end > deadline_date:
+                    retard = True
 
             result.append({
                 "id": t.id,
@@ -210,8 +218,8 @@ def get_tasks():
                 "duree": t.duree,
                 "debut": start.strftime("%d/%m %H:%M"),
                 "fin": end.strftime("%d/%m %H:%M"),
-                "deadline": deadline,
-                "retard": False
+                "deadline": deadline_display,
+                "retard": retard   # ✅ utilisé par le frontend
             })
 
             if t.etat != "Terminé":
