@@ -374,3 +374,36 @@ def reorder():
 
     db.session.commit()
     return {"success": True}
+
+@app.route("/api/atelier")
+def atelier():
+
+    users = db.session.query(Task.user).distinct().all()
+
+    result = []
+
+    for u in users:
+
+        if not ucontinue
+
+        tasks = (
+            Task.query
+            .filter_by(user=u[0])
+            .order_by(Task.ordre)
+            .all()
+        )
+
+        result.append({
+            "user": u[0],
+            "tasks": [
+                {
+                    "nom": t.nom,
+                    "client": t.client,
+                    "etat": t.etat,
+                    "duree": t.duree
+                }
+                for t in tasks
+            ]
+        })
+
+    return jsonify(result)
