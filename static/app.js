@@ -1,36 +1,49 @@
-// ---------------- TASKS ----------------
+// ---------------- LOAD TASKS ----------------
 function loadTasks() {
   fetch("/api/tasks")
     .then(r => r.json())
     .then(data => {
 
+      console.log("TASKS:", data); // ✅ debug
+
       let html = "";
 
-      data.forEach((t, i) => {
-        html += `
-        <div class="task ${t.retard ? "retard" : ""}">
+      if (!data || data.length === 0) {
+        html = "<p>⚠️ Aucune tâche</p>";
+      } else {
 
-          <span class="col-nom">${t.nom || "-"}</span>
-          <span class="col-client">${t.client || "-"}</span>
+        data.forEach((t, i) => {
 
-          <span class="col-duree">${t.etat !== "Terminé" ? t.duree + "h" : "✅"}</span>
+          html += `
+          <div class="task ${t.retard ? "retard" : ""}">
 
-          <span class="col-temps">${t.debut} → ${t.fin}</span>
+            <span class="col-nom">${t.nom || "-"}</span>
+            <span class="col-client">${t.client || "-"}</span>
+            <span class="col-duree">
+              ${t.etat !== "Terminé" ? t.duree + "h" : "✅"}
+            </span>
 
-          <span class="col-deadline">${t.deadline}</span>
+            <span class="col-temps">${t.debut} → ${t.fin}</span>
 
-          <span class="col-actions">
-            ${i > 0 ? `<button onclick="moveUp(${t.id})">🔼</button>` : ""}
-            ${i < data.length - 1 ? `<button onclick="moveDown(${t.id})">🔽</button>` : ""}
+            <span class="col-deadline">${t.deadline || "-"}</span>
 
-            ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
-            <button onclick="deleteTask(${t.id})">🗑</button>
-          </span>
+            <span class="col-actions">
+              ${i > 0 ? `<button onclick="moveUp(${t.id})">🔼</button>` : ""}
+              ${i < data.length - 1 ? `<button onclick="moveDown(${t.id})">🔽</button>` : ""}
 
-        </div>`;
-      });
+              ${t.etat !== "Terminé" ? `<button onclick="finishTask(${t.id})">✅</button>` : ""}
+              <button onclick="deleteTask(${t.id})">🗑</button>
+            </span>
+
+          </div>`;
+        });
+      }
 
       document.getElementById("tasks").innerHTML = html;
+    })
+    .catch(err => {
+      console.error("Erreur loadTasks:", err);
+      document.getElementById("tasks").innerHTML = "❌ Erreur chargement tâches";
     });
 }
 
@@ -43,29 +56,42 @@ function addTask() {
   const duree = parseFloat(document.getElementById("duree").value);
   let dl = document.getElementById("deadline").value.trim();
 
-  if (!nom || isNaN(duree)) return alert("Erreur");
+  if (!nom || isNaN(duree)) {
+    alert("❌ Erreur saisie");
+    return;
+  }
 
+  // ✅ format date
   if (/^\d{8}$/.test(dl)) {
     dl = `${dl.slice(4,8)}-${dl.slice(2,4)}-${dl.slice(0,2)}T00:00:00`;
-  } else dl = null;
+  } else {
+    dl = null;
+  }
 
   fetch("/api/tasks", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({nom, client, duree, deadline: dl})
-  }).then(loadTasks);
+  })
+  .then(r => r.json())
+  .then(() => {
+    loadTasks();
+  })
+  .catch(err => console.error("Erreur addTask:", err));
 }
 
 
-// ---------------- ACTIONS ----------------
+// ---------------- DELETE TASK ----------------
 function deleteTask(id){
   fetch(`/api/tasks/${id}`, {method:"DELETE"})
-    .then(loadTasks);
+    .then(() => loadTasks());
 }
 
+
+// ---------------- FINISH TASK ----------------
 function finishTask(id){
   fetch(`/api/tasks/${id}/done`, {method:"POST"})
-    .then(loadTasks);
+    .then(() => loadTasks());
 }
 
 
@@ -76,8 +102,10 @@ function moveUp(id){
     .then(tasks=>{
       const ids = tasks.map(t=>t.id);
       const i = ids.indexOf(id);
+
       if(i>0){
-        [ids[i-1], ids[i]]=[ids[i], ids[i-1]];
+        [ids[i-1], ids[i]] = [ids[i], ids[i-1]];
+
         fetch("/api/tasks/reorder",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -93,8 +121,10 @@ function moveDown(id){
     .then(tasks=>{
       const ids = tasks.map(t=>t.id);
       const i = ids.indexOf(id);
-      if(i<ids.length-1){
-        [ids[i], ids[i+1]]=[ids[i+1], ids[i]];
+
+      if(i<ids.length - 1){
+        [ids[i], ids[i+1]] = [ids[i+1], ids[i]];
+
         fetch("/api/tasks/reorder",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -110,23 +140,31 @@ function loadHolidays(){
   fetch("/api/holidays")
     .then(r=>r.json())
     .then(data=>{
+
       let html = "";
 
       data.forEach(d=>{
-        html += `<li>${d}
-        <button onclick="deleteHoliday('${d}')">❌</button></li>`;
+        html += `
+        <li>
+          ${d}
+          <button onclick="deleteHoliday('${d}')">❌</button>
+        </li>`;
       });
 
       document.getElementById("holidayList").innerHTML = html;
     });
 }
 
-function addHoliday(){
-  let val = document.getElementById("holiday").value;
 
-  if (/^\d{8}$/.test(val)){
-    val = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
+function addHoliday(){
+  let val = document.getElementById("holiday").value.trim();
+
+  if (!/^\d{8}$/.test(val)) {
+    alert("❌ Format JJMMAAAA");
+    return;
   }
+
+  val = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
 
   fetch("/api/holidays",{
     method:"POST",
@@ -138,6 +176,7 @@ function addHoliday(){
     loadTasks();
   });
 }
+
 
 function deleteHoliday(date){
   fetch(`/api/holidays/${date}`, {method:"DELETE"})
@@ -153,6 +192,7 @@ function loadSettings(){
   fetch("/api/settings")
     .then(r=>r.json())
     .then(data=>{
+
       const wh = data.work_hours;
 
       function set(day,i){
@@ -169,6 +209,7 @@ function loadSettings(){
       set("fri",0);
     });
 }
+
 
 function saveSettings(){
 
@@ -194,7 +235,8 @@ function saveSettings(){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(data)
-  }).then(()=>{
+  })
+  .then(()=>{
     alert("✅ sauvegardé");
     loadTasks();
   });
