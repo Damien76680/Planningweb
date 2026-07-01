@@ -19,13 +19,11 @@
       font-size: 12px;
     }
 
-    /* ✅ header colonnes */
     .header {
       font-weight: bold;
       background: #eee;
     }
 
-    /* ✅ colonnes */
     .col-nom { width: 120px; }
     .col-client { width: 100px; }
     .col-duree { width: 50px; }
@@ -33,25 +31,21 @@
     .col-deadline { width: 80px; margin-left: 10px; }
     .col-actions { width: 140px; }
 
-    /* ✅ éviter retour ligne */
     .task span {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* ✅ RETARD (rouge clair) */
     .task.retard {
       background-color: #ffe5e5;
       border-left: 4px solid red;
     }
 
-    /* ✅ Tâche terminée */
-.task.done {
-  background-color: #e6ffe6;   /* vert clair */
-  border-left: 4px solid green;
+    .task.done {
+      background-color: #e6ffe6;
+      border-left: 4px solid green;
     }
-
 
     button {
       font-size: 11px;
@@ -66,6 +60,22 @@
     input {
       margin: 3px;
     }
+
+    #atelierView {
+      margin-top: 15px;
+    }
+
+    .atelier-user {
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .atelier-user h3 {
+      margin: 0 0 10px 0;
+      background: #eee;
+      padding: 5px;
+    }
   </style>
 </head>
 
@@ -73,16 +83,90 @@
 
 <h2 id="planningTitle"></h2>
 
-<!-- ✅ AJOUT TACHE -->
-<input id="nom" placeholder="Nom">
-<input id="client" placeholder="Client">
-<input id="duree" placeholder="Durée">
-<input id="deadline" placeholder="JJMMAAAA">
-<button onclick="addTask()">Ajouter</button>
+<div id="adminPanel">
+
+  <input id="nom" placeholder="Nom">
+  <input id="client" placeholder="Client">
+  <input id="duree" placeholder="Durée">
+  <input id="deadline" placeholder="JJMMAAAA">
+  <button onclick="addTask()">Ajouter</button>
+
+  <hr>
+
+  <h3>Congés</h3>
+
+  <input id="holiday" placeholder="JJMMAAAA">
+  <button onclick="addHoliday()">Ajouter</button>
+
+  <ul id="holidayList"></ul>
+
+  <hr>
+
+  <h3>Paramètres horaires</h3>
+
+  <div id="settingsForm">
+
+    <div>
+      Lundi :
+      <input id="mon1_start" type="time">
+      -
+      <input id="mon1_end" type="time">
+
+      <input id="mon2_start" type="time">
+      -
+      <input id="mon2_end" type="time">
+    </div>
+
+    <div>
+      Mardi :
+      <input id="tue1_start" type="time">
+      -
+      <input id="tue1_end" type="time">
+
+      <input id="tue2_start" type="time">
+      -
+      <input id="tue2_end" type="time">
+    </div>
+
+    <div>
+      Mercredi :
+      <input id="wed1_start" type="time">
+      -
+      <input id="wed1_end" type="time">
+
+      <input id="wed2_start" type="time">
+      -
+      <input id="wed2_end" type="time">
+    </div>
+
+    <div>
+      Jeudi :
+      <input id="thu1_start" type="time">
+      -
+      <input id="thu1_end" type="time">
+
+      <input id="thu2_start" type="time">
+      -
+      <input id="thu2_end" type="time">
+    </div>
+
+    <div>
+      Vendredi :
+      <input id="fri1_start" type="time">
+      -
+      <input id="fri1_end" type="time">
+    </div>
+
+  </div>
+
+  <button onclick="saveSettings()">Sauvegarder</button>
+
+</div>
+
+<hr>
 
 <h3>Tâches</h3>
 
-<!-- ✅ HEADER -->
 <div class="task header">
   <span class="col-nom">Nom</span>
   <span class="col-client">Client</span>
@@ -93,71 +177,9 @@
 </div>
 
 <div id="tasks"></div>
+
 <div id="atelierView"></div>
 
-<hr>
-
-<!-- ✅ CONGÉS -->
-<h3>Congés</h3>
-<input id="holiday" placeholder="JJMMAAAA">
-<button onclick="addHoliday()">Ajouter</button>
-<ul id="holidayList"></ul>
-
-<hr>
-
-<!-- ✅ PARAMÈTRES -->
-<h3>Paramètres horaires</h3>
-
-<div id="settingsForm">
-
-  <div>Lundi :
-    <input id="mon1_start" type="time"> -
-    <input id="mon1_end" type="time">
-    <input id="mon2_start" type="time"> -
-    <input id="mon2_end" type="time">
-  </div>
-
-  <div>Mardi :
-    <input id="tue1_start" type="time"> -
-    <input id="tue1_end" type="time">
-    <input id="tue2_start" type="time"> -
-    <input id="tue2_end" type="time">
-  </div>
-
-  <div>Mercredi :
-    <input id="wed1_start" type="time"> -
-    <input id="wed1_end" type="time">
-    <input id="wed2_start" type="time"> -
-    <input id="wed2_end" type="time">
-  </div>
-
-  <div>Jeudi :
-    <input id="thu1_start" type="time"> -
-    <input id="thu1_end" type="time">
-    <input id="thu2_start" type="time"> -
-    <input id="thu2_end" type="time">
-  </div>
-
-  <div>Vendredi :
-    <input id="fri1_start" type="time"> -
-    <input id="fri1_end" type="time">
-  </div>
-
-</div>
-
-<button onclick="saveSettings()">Sauvegarder</button>
-
-<div id="adminPanel">
-
-  <!-- Ajout tâche -->
-
-  <!-- Congés -->
-
-  <!-- Horaires -->
-
-</div>
-
-<!-- ✅ ✅ ✅ CORRECTION CRITIQUE ICI -->
 <script src="/static/app.js"></script>
 
 </body>
