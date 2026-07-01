@@ -264,9 +264,17 @@ function loadAtelier(){
 
                     html += `
                         <div class="task ${t.etat === 'Terminé' ? 'done' : ''}">
-                            <b>${t.nom}</b>
-                            - ${t.client}
-                            (${t.duree}h)
+                            <b>${t.nom}</b><br>
+
+                Client : ${t.client}<br>
+
+                Durée : ${t.duree} h<br>
+
+                Début : ${t.debut}<br>
+
+                Fin : ${t.fin}<br>
+
+                Deadline : ${t.deadline}
                         </div>
                     `;
                 });
