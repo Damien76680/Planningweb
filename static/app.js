@@ -1,4 +1,4 @@
-// ---------------- LOAD TASKS ----------------
+// ---------------- TASKS ----------------
 function loadTasks() {
   fetch("/api/tasks")
     .then(r => r.json())
@@ -36,41 +36,13 @@ function loadTasks() {
         container.appendChild(div);
       });
 
-      enableDragAndDrop();
-    });
-}
-
-
-// ---------------- EDIT TASK ----------------
-function editTask(id){
-
-  fetch("/api/tasks")
-    .then(r=>r.json())
-    .then(tasks=>{
-      const t = tasks.find(x => x.id === id);
-
-      const nom = prompt("Nom :", t.nom);
-      const client = prompt("Client :", t.client);
-      const duree = prompt("Durée :", t.duree);
-      const deadline = prompt("Deadline (JJMMAAAA) :", "");
-
-      fetch(`/api/tasks/${id}/edit`, {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          nom,
-          client,
-          duree,
-          deadline
-        })
-      }).then(loadTasks);
+      enableDrag();
     });
 }
 
 
 // ---------------- ADD TASK ----------------
 function addTask() {
-
   const nom = document.getElementById("nom").value;
   const client = document.getElementById("client").value;
   const duree = parseFloat(document.getElementById("duree").value);
@@ -88,14 +60,33 @@ function addTask() {
 }
 
 
-// ---------------- DELETE ----------------
+// ---------------- EDIT ----------------
+function editTask(id){
+  fetch("/api/tasks")
+    .then(r=>r.json())
+    .then(tasks=>{
+      const t = tasks.find(x => x.id === id);
+
+      const nom = prompt("Nom :", t.nom);
+      const client = prompt("Client :", t.client);
+      const duree = prompt("Durée :", t.duree);
+      const deadline = prompt("Deadline (JJMMAAAA) :", "");
+
+      fetch(`/api/tasks/${id}/edit`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({nom, client, duree, deadline})
+      }).then(loadTasks);
+    });
+}
+
+
+// ---------------- ACTIONS ----------------
 function deleteTask(id){
   fetch(`/api/tasks/${id}`, {method:"DELETE"})
     .then(loadTasks);
 }
 
-
-// ---------------- FINISH ----------------
 function finishTask(id){
   fetch(`/api/tasks/${id}/done`, {method:"POST"})
     .then(loadTasks);
@@ -103,20 +94,15 @@ function finishTask(id){
 
 
 // ---------------- DRAG & DROP ----------------
-function enableDragAndDrop(){
+function enableDrag(){
 
-  const items = document.querySelectorAll(".task");
   let dragged = null;
 
-  items.forEach(item => {
+  document.querySelectorAll(".task").forEach(item => {
 
-    item.addEventListener("dragstart", () => {
-      dragged = item;
-    });
+    item.addEventListener("dragstart", () => dragged = item);
 
-    item.addEventListener("dragover", e => {
-      e.preventDefault();
-    });
+    item.addEventListener("dragover", e => e.preventDefault());
 
     item.addEventListener("drop", e => {
       e.preventDefault();
@@ -129,9 +115,7 @@ function enableDragAndDrop(){
   });
 }
 
-
 function updateOrder(){
-
   const ids = [...document.querySelectorAll(".task")]
     .map(el => parseInt(el.dataset.id));
 
@@ -143,5 +127,61 @@ function updateOrder(){
 }
 
 
+// ---------------- HOLIDAYS ----------------
+function loadHolidays(){
+  fetch("/api/holidays")
+    .then(r => r.json())
+    .then(data => {
+      const list = document.getElementById("holidayList");
+      list.innerHTML = "";
+
+      data.forEach(d => {
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+          ${d}
+          <button onclick="deleteHoliday('${d}')">❌</button>
+        `;
+
+        list.appendChild(li);
+      });
+    });
+}
+
+function addHoliday(){
+
+  let val = document.getElementById("holiday").value.trim();
+
+  console.log("INPUT:", val);
+
+  if (!/^\d{8}$/.test(val)) {
+    alert("Format JJMMAAAA");
+    return;
+  }
+
+  const formatted = `${val.slice(4,8)}-${val.slice(2,4)}-${val.slice(0,2)}`;
+
+  fetch("/api/holidays", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({date: formatted})
+  })
+  .then(() => {
+    loadHolidays();
+    loadTasks();
+  });
+}
+
+
+function deleteHoliday(date){
+  fetch(`/api/holidays/${date}`, {method:"DELETE"})
+    .then(() => {
+      loadHolidays();
+      loadTasks();
+    });
+}
+
+
 // ---------------- INIT ----------------
 loadTasks();
+loadHolidays();
