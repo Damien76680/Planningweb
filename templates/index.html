@@ -2,54 +2,58 @@
 <html>
 <head>
   <title>Planning</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body {
-      font-family: Arial;
-      margin: 10px;
-    }
+    body { font-family: Arial; margin: 10px; }
 
     .task {
       display: flex;
       align-items: center;
-      padding: 6px;
+      padding: 4px;
       border: 1px solid #ccc;
       margin: 3px 0;
+      font-size: 12px;
+    }
+
+    .header {
+      font-weight: bold;
+      background: #eee;
     }
 
     /* colonnes */
-    .col-nom { width: 150px; }
-    .col-client { width: 120px; }
-    .col-duree { width: 60px; }
+    .col-nom { width: 120px; }
+    .col-client { width: 100px; }
+    .col-duree { width: 50px; }
     .col-temps { width: 220px; }
-    .col-deadline { width: 120px; }
-    .col-actions { width: 180px; }
+    .col-deadline { width: 80px; margin-left: 10px; }
+    .col-actions { width: 140px; }
 
-    /* ligne retard */
+    /* texte compact */
+    .task span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* retard */
     .task.retard {
       background-color: #ff4d4d;
       color: white;
-      font-weight: bold;
       border: 2px solid darkred;
     }
 
     .task.retard button {
-      background-color: white;
+      background: white;
       color: black;
     }
 
     button {
+      font-size: 11px;
+      padding: 2px 4px;
       margin: 2px;
     }
 
-    #settingsForm div {
-      margin: 6px 0;
-    }
-
-    input {
-      margin: 3px;
-    }
+    #settingsForm div { margin: 6px 0; }
   </style>
 </head>
 
@@ -57,7 +61,7 @@
 
 <h2>Planning</h2>
 
-<!-- ✅ AJOUT TACHE -->
+<!-- AJOUT -->
 <input id="nom" placeholder="Nom">
 <input id="client" placeholder="Client">
 <input id="duree" placeholder="Durée">
@@ -65,25 +69,31 @@
 <button onclick="addTask()">Ajouter</button>
 
 <h3>Tâches</h3>
-<div id="tasks"></div>
 
+<!-- ✅ HEADER -->
+<div class="task header">
+  <span class="col-nom">Nom</span>
+  <span class="col-client">Client</span>
+  <span class="col-duree">Durée</span>
+  <span class="col-temps">Planning</span>
+  <span class="col-deadline">Deadline</span>
+  <span class="col-actions">Actions</span>
+</div>
+
+<div id="tasks"></div>
 
 <hr>
 
-<!-- ✅ CONGES -->
 <h3>Congés</h3>
 <input id="holiday" placeholder="JJMMAAAA">
 <button onclick="addHoliday()">Ajouter</button>
 <ul id="holidayList"></ul>
 
-
 <hr>
 
-<!-- ✅ PARAMETRES -->
 <h3>Paramètres horaires</h3>
 
 <div id="settingsForm">
-
   <div>Lundi :
     <input id="mon1_start" type="time"> -
     <input id="mon1_end" type="time">
@@ -116,13 +126,10 @@
     <input id="fri1_start" type="time"> -
     <input id="fri1_end" type="time">
   </div>
-
 </div>
 
 <button onclick="saveSettings()">Sauvegarder</button>
 
-
-<!-- ✅ ✅ ✅ CORRECTION CRITIQUE -->
 <script src="/static/app.js"></script>
 
 </body>
