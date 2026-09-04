@@ -87,7 +87,7 @@ function loadTasks() {
       ? "✅ Fini"
       : t.retard
         ? "⚠️ Retard"
-        : "🔄 En cours"
+        : ""
   }
 </span>
 
