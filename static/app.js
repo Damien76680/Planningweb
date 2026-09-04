@@ -81,6 +81,15 @@ function loadTasks() {
           <span class="col-duree">${t.duree}h</span>
           <span class="col-temps">${t.debut} → ${t.fin}</span>
           <span class="col-deadline">${t.deadline}</span>
+          <span class="col-etat">
+  ${
+    t.etat === "Terminé"
+      ? "✅ Fini"
+      : t.retard
+        ? "⚠️ Retard"
+        : "🔄 En cours"
+  }
+</span>
 
           ${ATELIER ? "" : `
     <span class="col-actions">
