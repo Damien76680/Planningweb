@@ -232,6 +232,14 @@ def get_tasks():
         current = now()
         result = []
 
+        tasks = sorted(
+    tasks,
+    key=lambda t: (
+        t.etat == "Terminé",
+        t.ordre
+    )
+)
+
         for t in tasks:
 
             duration = 0 if t.etat == "Terminé" else float(t.duree or 0)
