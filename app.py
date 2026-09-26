@@ -491,42 +491,50 @@ def atelier():
 
     return jsonify(result)
 # ---------------- EXPORT ----------------
-
 @app.route("/api/export")
 def export_data():
 
-    data = {
-        "tasks": [
-            {
-                "user": t.user,
-                "nom": t.nom,
-                "client": t.client,
-                "duree": t.duree,
-                "etat": t.etat,
-                "ordre": t.ordre,
-                "deadline": t.deadline.isoformat() if t.deadline else None
-            }
-            for t in Task.query.all()
-        ],
+    try:
 
-        "holidays": [
-            {
-                "user": h.user,
-                "date": h.date
-            }
-            for h in Holiday.query.all()
-        ],
+        data = {
+            "tasks": [
+                {
+                    "user": t.user,
+                    "nom": t.nom,
+                    "client": t.client,
+                    "duree": t.duree,
+                    "etat": t.etat,
+                    "ordre": t.ordre,
+                    "deadline": str(t.deadline) if t.deadline else None
+                }
+                for t in Task.query.all()
+            ],
+            "holidays": [
+                {
+                    "user": h.user,
+                    "date": h.date
+                }
+                for h in Holiday.query.all()
+            ],
+            "settings": [
+                {
+                    "user": s.user,
+                    "data": s.data
+                }
+                for s in Settings.query.all()
+            ]
+        }
 
-        "settings": [
-            {
-                "user": s.user,
-                "data": s.data
-            }
-            for s in Settings.query.all()
-        ]
-    }
+        return jsonify(data)
 
-    return jsonify(data)
+    except Exception as e:
+
+        print("ERREUR EXPORT =", e)
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 # ---------------- IMPORT ----------------
