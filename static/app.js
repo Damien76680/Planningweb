@@ -76,11 +76,35 @@ function loadTasks() {
         div.dataset.id = t.id;
 
         div.innerHTML = `
-          <span class="col-nom">${t.nom}</span>
-          <span class="col-client">${t.client}</span>
-          <span class="col-duree">${t.duree}h</span>
-          <span class="col-temps">${t.debut} → ${t.fin}</span>
-          <span class="col-deadline">${t.deadline}</span>
+          div.innerHTML = `
+  <span class="col-nom">${t.nom}</span>
+  <span class="col-client">${t.client}</span>
+  <span class="col-duree">${t.duree}h</span>
+
+  <span class="col-debut">${t.debut}</span>
+
+  <span class="col-fin">${t.fin}</span>
+
+  <span class="col-deadline">${t.deadline}</span>
+
+  <span class="col-etat">
+      ${
+          t.etat === "Terminé"
+          ? "Fini"
+          : t.retard
+          ? "En retard"
+          : ""
+      }
+  </span>
+
+  ${ATELIER ? "" : `
+    <span class="col-actions">
+      <button onclick="editTask(${t.id})">✏️</button>
+      <button onclick="finishTask(${t.id})">✅</button>
+      <button onclick="deleteTask(${t.id})">🗑️</button>
+    </span>
+  `}
+`;
           <span class="col-etat">
   ${
     t.etat === "Terminé"
