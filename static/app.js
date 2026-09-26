@@ -52,6 +52,7 @@ console.log("USER =", USER);
 
 
 // ---------------- TASKS ----------------
+
 function loadTasks() {
 
     fetch(`/api/tasks?user=${USER}`)
@@ -70,36 +71,37 @@ function loadTasks() {
 
                 return;
             }
-let separationAjoutee = false;
+
+            let separationAjoutee = false;
+
             data.forEach(t => {
 
-    if (
-        t.etat === "Terminé" &&
-        !separationAjoutee
-    ) {
+                if (
+                    t.etat === "Terminé" &&
+                    !separationAjoutee
+                ) {
 
-        const sep =
-            document.createElement("div");
+                    const sep =
+                        document.createElement("div");
 
-        sep.innerHTML = `
-            <div style="
-                margin:20px 0;
-                text-align:center;
-                font-weight:bold;
-                color:#666;
-                border-top:2px solid #ccc;
-                border-bottom:2px solid #ccc;
-                padding:8px;
-            ">
-                ✅ TÂCHES TERMINÉES
-            </div>
-        `;
+                    sep.innerHTML = `
+                        <div style="
+                            margin:20px 0;
+                            text-align:center;
+                            font-weight:bold;
+                            color:#666;
+                            border-top:2px solid #ccc;
+                            border-bottom:2px solid #ccc;
+                            padding:8px;
+                        ">
+                            ✅ TÂCHES TERMINÉES
+                        </div>
+                    `;
 
-        container.appendChild(sep);
+                    container.appendChild(sep);
 
-        separationAjoutee = true;
-    }
-``
+                    separationAjoutee = true;
+                }
 
                 const div =
                     document.createElement("div");
@@ -171,8 +173,8 @@ let separationAjoutee = false;
             enableDrag();
 
         });
-}
 
+}
 // ---------------- ADD TASK ----------------
 function addTask() {
   const nom = document.getElementById("nom").value;
@@ -335,7 +337,8 @@ function loadAtelier(){
         .then(r => r.json())
         .then(data => {
 
-            const div = document.getElementById("atelierView");
+            const div =
+                document.getElementById("atelierView");
 
             let html = `
                 <div style="
@@ -345,29 +348,18 @@ function loadAtelier(){
                     overflow-x:auto;
                 ">
             `;
-            let separationAjoutee = false;
 
             data.forEach(user => {
-if (
-    t.etat === "Terminé" &&
-    !separationAjoutee
-) {
 
-    const sep =
-        document.createElement("div");
-
-    sep.innerHTML = `
-        <h3 style="
-            text-align:center;
-            margin:20px 0 10px 0;
-            color:#666;
-        ">
-            TÂCHES TERMINÉES
-        </h3>
-    `;
-
-    container.appendChild(sep);
-
+                html += `
+                    <div style="
+                        min-width:350px;
+                        border:1px solid #ccc;
+                        padding:10px;
+                        background:#f8f8f8;
+                    ">
+                        <h2>${user.user}</h2>
+                `;
 
                 user.tasks.forEach(t => {
 
@@ -396,10 +388,14 @@ if (
                     `;
                 });
 
-                html += `</div>`;
+                html += `
+                    </div>
+                `;
             });
 
-            html += `</div>`;
+            html += `
+                </div>
+            `;
 
             div.innerHTML = html;
         });
