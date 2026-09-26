@@ -482,3 +482,94 @@ def atelier():
         })
 
     return jsonify(result)
+# ---------------- EXPORT ----------------
+
+@app.route("/api/export")
+def export_data():
+
+    data = {
+        "tasks": [
+            {
+                "user": t.user,
+                "nom": t.nom,
+                "client": t.client,
+                "duree": t.duree,
+                "etat": t.etat,
+                "ordre": t.ordre,
+                "deadline": t.deadline.isoformat() if t.deadline else None
+            }
+            for t in Task.query.all()
+        ],
+
+        "holidays": [
+            {
+                "user": h.user,
+                "date": h.date
+            }
+            for h in Holiday.query.all()
+        ],
+
+        "settings": [
+            {
+                "user": s.user,
+                "data": s.data
+            }
+            for s in Settings.query.all()
+        ]
+    }
+
+    return jsonify(data)
+
+
+# ---------------- IMPORT ----------------
+
+@app.route("/api/import", methods=["POST"])
+def import_data():
+
+    data = request.get_json()
+
+    Task.query.delete()
+    Holiday.query.delete()
+    Settings.query.delete()
+
+    db.session.commit()
+
+    for t in data.get("tasks", []):
+
+        deadline = None
+
+        if t.get("deadline"):
+            try:
+                deadline = datetime.fromisoformat(
+                    t["deadline"]
+                )
+            except:
+                pass
+
+        db.session.add(Task(
+            user=t.get("user"),
+            nom=t.get("nom"),
+            client=t.get("client"),
+            duree=t.get("duree"),
+            etat=t.get("etat"),
+            ordre=t.get("ordre"),
+            deadline=deadline
+        ))
+
+    for h in data.get("holidays", []):
+
+        db.session.add(Holiday(
+            user=h.get("user"),
+            date=h.get("date")
+        ))
+
+    for s in data.get("settings", []):
+
+        db.session.add(Settings(
+            user=s.get("user"),
+            data=s.get("data")
+        ))
+
+    db.session.commit()
+
+    return {"success": True}
