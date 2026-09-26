@@ -354,3 +354,74 @@ setInterval(() => {
     }
 
 }, 5000);
+// ---------------- EXPORT ----------------
+
+function exportData() {
+
+    fetch("/api/export")
+        .then(r => r.json())
+        .then(data => {
+
+            const blob = new Blob(
+                [JSON.stringify(data, null, 2)],
+                { type: "application/json" }
+            );
+
+            const a = document.createElement("a");
+
+            a.href = URL.createObjectURL(blob);
+
+            a.download =
+                "planning_backup_" +
+                new Date().toISOString().slice(0,10) +
+                ".json";
+
+            a.click();
+        });
+}
+
+
+// ---------------- IMPORT ----------------
+
+function importData() {
+
+    const file =
+        document.getElementById("importFile")
+        .files[0];
+
+    if (!file) {
+
+        alert("Choisissez un fichier");
+
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+        fetch("/api/import", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body: e.target.result
+
+        })
+        .then(() => {
+
+            alert("Import terminé");
+
+            location.reload();
+
+        });
+
+    };
+
+    reader.readAsText(file);
+
+}
