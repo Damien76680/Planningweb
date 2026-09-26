@@ -431,26 +431,42 @@ setInterval(() => {
 function exportData() {
 
     fetch("/api/export")
-        .then(r => r.json())
+        .then(response => response.json())
         .then(data => {
 
+            const json =
+                JSON.stringify(data, null, 2);
+
             const blob = new Blob(
-                [JSON.stringify(data, null, 2)],
+                [json],
                 { type: "application/json" }
             );
 
-            const a = document.createElement("a");
+            const url =
+                window.URL.createObjectURL(blob);
 
-            a.href = URL.createObjectURL(blob);
+            const a =
+                document.createElement("a");
+
+            a.href = url;
 
             a.download =
                 "planning_backup_" +
-                new Date().toISOString().slice(0,10) +
+                new Date()
+                    .toISOString()
+                    .slice(0, 10) +
                 ".json";
 
+            document.body.appendChild(a);
+
             a.click();
-        });
-}
+
+            document.body.removeChild(a);
+
+            window.URL.revokeObjectURL(url);
+
+        })
+        .catch(
 
 
 // ---------------- IMPORT ----------------
