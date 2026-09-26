@@ -509,6 +509,7 @@ def export_data():
                 }
                 for t in Task.query.all()
             ],
+
             "holidays": [
                 {
                     "user": h.user,
@@ -516,6 +517,7 @@ def export_data():
                 }
                 for h in Holiday.query.all()
             ],
+
             "settings": [
                 {
                     "user": s.user,
