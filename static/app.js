@@ -73,11 +73,12 @@ function loadTasks() {
         if (t.retard) div.className += " retard";
         if (t.etat === "Terminé") div.className += " done";
         div.draggable = true;
-        div.dataset.id = t.id;
-
-        div.innerHTML = 
+ 
+          div.innerHTML = `
   <span class="col-nom">${t.nom}</span>
+
   <span class="col-client">${t.client}</span>
+
   <span class="col-duree">${t.duree}h</span>
 
   <span class="col-debut">${t.debut}</span>
@@ -87,14 +88,23 @@ function loadTasks() {
   <span class="col-deadline">${t.deadline}</span>
 
   <span class="col-etat">
-      ${
-          t.etat === "Terminé"
-          ? "Fini"
-          : t.retard
+    ${
+      t.etat === "Terminé"
+        ? "Fini"
+        : t.retard
           ? "En retard"
           : ""
-      }
+    }
   </span>
+
+  ${ATELIER ? "" : `
+    <span class="col-actions">
+      <button onclick="editTask(${t.id})">✏️</button>
+      <button onclick="finishTask(${t.id})">✅</button>
+      <button onclick="deleteTask(${t.id})">🗑️</button>
+    </span>
+  `}
+`;
 
   ${ATELIER ? "" : `
     <span class="col-actions">
