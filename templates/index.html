@@ -27,7 +27,13 @@
     .col-nom { width: 220px; }
     .col-client { width: 100px; }
     .col-duree { width: 50px; }
-    .col-temps { width: 220px; }
+    .col-debut {
+    width: 140px;
+}
+
+.col-fin {
+    width: 140px;
+}
     .col-deadline { width: 80px; margin-left: 10px; }
     .col-etat { width: 100px; }
     .col-actions { width: 140px; }
@@ -94,7 +100,8 @@
   <span class="col-nom">Nom</span>
   <span class="col-client">Client</span>
   <span class="col-duree">Durée</span>
-  <span class="col-temps">Planning</span>
+  <span class="col-debut">Début</span>
+  <span class="col-fin">Fin</span>
   <span class="col-deadline">Deadline</span>
   <span class="col-etat">État</span>
   <span class="col-actions">Actions</span>
@@ -183,7 +190,25 @@
   <button onclick="saveSettings()">Sauvegarder</button>
 
 </div>
+<hr>
 
+<h3>Sauvegarde</h3>
+
+<button onclick="exportData()">
+    Exporter les données
+</button>
+
+<br><br>
+
+<input
+    type="file"
+    id="importFile"
+    accept=".json"
+/>
+
+<button onclick="importData()">
+    Importer les données
+</button>
 <script src="/static/app.js"></script>
 
 </body>
