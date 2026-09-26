@@ -70,8 +70,36 @@ function loadTasks() {
 
                 return;
             }
-
+let separationAjoutee = false;
             data.forEach(t => {
+
+    if (
+        t.etat === "Terminé" &&
+        !separationAjoutee
+    ) {
+
+        const sep =
+            document.createElement("div");
+
+        sep.innerHTML = `
+            <div style="
+                margin:20px 0;
+                text-align:center;
+                font-weight:bold;
+                color:#666;
+                border-top:2px solid #ccc;
+                border-bottom:2px solid #ccc;
+                padding:8px;
+            ">
+                ✅ TÂCHES TERMINÉES
+            </div>
+        `;
+
+        container.appendChild(sep);
+
+        separationAjoutee = true;
+    }
+``
 
                 const div =
                     document.createElement("div");
@@ -317,18 +345,29 @@ function loadAtelier(){
                     overflow-x:auto;
                 ">
             `;
+            let separationAjoutee = false;
 
             data.forEach(user => {
+if (
+    t.etat === "Terminé" &&
+    !separationAjoutee
+) {
 
-                html += `
-                    <div style="
-                        min-width:350px;
-                        border:1px solid #ccc;
-                        padding:10px;
-                        background:#f8f8f8;
-                    ">
-                        <h2>${user.user}</h2>
-                `;
+    const sep =
+        document.createElement("div");
+
+    sep.innerHTML = `
+        <h3 style="
+            text-align:center;
+            margin:20px 0 10px 0;
+            color:#666;
+        ">
+            TÂCHES TERMINÉES
+        </h3>
+    `;
+
+    container.appendChild(sep);
+
 
                 user.tasks.forEach(t => {
 
