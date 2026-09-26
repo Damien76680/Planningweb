@@ -226,7 +226,7 @@ function enableDrag(){
 }
 
 function updateOrder(){
-  const ids = [...document.querySelectorAll(".task")]
+const ids = [...document.querySelectorAll(".task[data-id]")]
     .map(el => parseInt(el.dataset.id));
 
   fetch("/api/tasks/reorder", {
