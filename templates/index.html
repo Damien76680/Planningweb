@@ -1,227 +1,144 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Planning</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body {
-      font-family: Arial;
-      margin: 10px;
-    }
-
-#adminPanel {
-    display: none;
-}
-      .task {
-  display: flex;
-  align-items: center;
-  padding: 4px;
-  border: 1px solid #ccc;
-  border-left: 8px solid transparent;
-  margin: 3px 0;
-  font-size: 12px;
-}
-    
-
-    .header {
-      font-weight: bold;
-      background: #eee;
-    }
-
-    .col-nom { width: 220px; }
-    .col-client { width: 100px; }
-    .col-duree { width: 50px; }
-    .col-debut {
-    width: 140px;
-}
-
-
-  .col-fin {
-    width: 140px;
-    font-weight: bold;
-}
-
-    .col-deadline { width: 80px; margin-left: 10px; }
-    .col-etat { width: 100px; }
-    .col-actions { width: 140px; }
-
-    .task span {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .task.retard {
-      background-color: #ffe5e5;
-      border-left: 8px solid red;
-    }
-
-    .task.done {
-      background-color: #e6ffe6;
-      border-left: 8px solid green;
-    }
-
-    button {
-      font-size: 11px;
-      padding: 2px 4px;
-      margin: 2px;
-    }
-
-    #settingsForm div {
-      margin: 6px 0;
-    }
-
-    input {
-      margin: 3px;
-    }
-
-    #atelierView {
-      margin-top: 15px;
-    }
-
-    .atelier-user {
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-
-    .atelier-user h3 {
-      margin: 0 0 10px 0;
-      background: #eee;
-      padding: 5px;
-    }
-  </style>
-</head>
-
 <body>
 
 <h2 id="planningTitle"></h2>
-
-
 
 <hr>
 
 <h3>Tâches</h3>
 
 <div class="task header">
-  <span class="col-nom">Nom</span>
-  <span class="col-client">Client</span>
-  <span class="col-duree">Durée</span>
-  <span class="col-debut">Début</span>
-  <span class="col-fin">Fin</span>
-  <span class="col-deadline">Deadline</span>
-  <span class="col-etat">État</span>
-  <span class="col-actions">Actions</span>
+    <span class="col-nom">Nom</span>
+    <span class="col-client">Client</span>
+    <span class="col-duree">Durée</span>
+    <span class="col-debut">Début</span>
+    <span class="col-fin">Fin</span>
+    <span class="col-deadline">Deadline</span>
+    <span class="col-etat">État</span>
+    <span class="col-actions">Actions</span>
 </div>
 
 <div id="tasks"></div>
 
 <div id="atelierView"></div>
+
+<hr>
+
+<h3>Nouvelle tâche</h3>
+
+<input id="nom" placeholder="Nom">
+<input id="client" placeholder="Client">
+<input id="duree" placeholder="Durée">
+<input id="deadline" placeholder="JJMMAAAA">
+
+<button onclick="addTask()">
+    Ajouter
+</button>
+
+<hr>
+
 <button onclick="toggleAdmin()">
     ⚙️ Administration
 </button>
 
 <br><br>
+
 <div id="adminPanel">
 
-  <input id="nom" placeholder="Nom">
-  <input id="client" placeholder="Client">
-  <input id="duree" placeholder="Durée">
-  <input id="deadline" placeholder="JJMMAAAA">
-  <button onclick="addTask()">Ajouter</button>
+    <h3>Congés</h3>
 
-  <hr>
+    <input id="holiday" placeholder="JJMMAAAA">
 
-  <h3>Congés</h3>
+    <button onclick="addHoliday()">
+        Ajouter
+    </button>
 
-  <input id="holiday" placeholder="JJMMAAAA">
-  <button onclick="addHoliday()">Ajouter</button>
+    <ul id="holidayList"></ul>
 
-  <ul id="holidayList"></ul>
+    <hr>
 
-  <hr>
+    <h3>Paramètres horaires</h3>
 
-  <h3>Paramètres horaires</h3>
+    <div id="settingsForm">
 
-  <div id="settingsForm">
+        <div>
+            Lundi :
+            <input id="mon1_start" type="time">
+            -
+            <input id="mon1_end" type="time">
 
-    <div>
-      Lundi :
-      <input id="mon1_start" type="time">
-      -
-      <input id="mon1_end" type="time">
+            <input id="mon2_start" type="time">
+            -
+            <input id="mon2_end" type="time">
+        </div>
 
-      <input id="mon2_start" type="time">
-      -
-      <input id="mon2_end" type="time">
+        <div>
+            Mardi :
+            <input id="tue1_start" type="time">
+            -
+            <input id="tue1_end" type="time">
+
+            <input id="tue2_start" type="time">
+            -
+            <input id="tue2_end" type="time">
+        </div>
+
+        <div>
+            Mercredi :
+            <input id="wed1_start" type="time">
+            -
+            <input id="wed1_end" type="time">
+
+            <input id="wed2_start" type="time">
+            -
+            <input id="wed2_end" type="time">
+        </div>
+
+        <div>
+            Jeudi :
+            <input id="thu1_start" type="time">
+            -
+            <input id="thu1_end" type="time">
+
+            <input id="thu2_start" type="time">
+            -
+            <input id="thu2_end" type="time">
+        </div>
+
+        <div>
+            Vendredi :
+            <input id="fri1_start" type="time">
+            -
+            <input id="fri1_end" type="time">
+        </div>
+
     </div>
 
-    <div>
-      Mardi :
-      <input id="tue1_start" type="time">
-      -
-      <input id="tue1_end" type="time">
+    <button onclick="saveSettings()">
+        Sauvegarder les horaires
+    </button>
 
-      <input id="tue2_start" type="time">
-      -
-      <input id="tue2_end" type="time">
-    </div>
+    <hr>
 
-    <div>
-      Mercredi :
-      <input id="wed1_start" type="time">
-      -
-      <input id="wed1_end" type="time">
+    <h3>Sauvegarde</h3>
 
-      <input id="wed2_start" type="time">
-      -
-      <input id="wed2_end" type="time">
-    </div>
+    <button onclick="exportData()">
+        📤 Exporter les données
+    </button>
 
-    <div>
-      Jeudi :
-      <input id="thu1_start" type="time">
-      -
-      <input id="thu1_end" type="time">
+    <br><br>
 
-      <input id="thu2_start" type="time">
-      -
-      <input id="thu2_end" type="time">
-    </div>
+    <input
+        type="file"
+        id="importFile"
+        accept=".json"
+    >
 
-    <div>
-      Vendredi :
-      <input id="fri1_start" type="time">
-      -
-      <input id="fri1_end" type="time">
-    </div>
-
-  </div>
-
-  <button onclick="saveSettings()">Sauvegarder</button>
+    <button onclick="importData()">
+        📥 Importer les données
+    </button>
 
 </div>
-<hr>
 
-<h3>Sauvegarde</h3>
-
-<button onclick="exportData()">
-    Exporter les données
-</button>
-
-<br><br>
-
-<input
-    type="file"
-    id="importFile"
-    accept=".json"
-/>
-
-<button onclick="importData()">
-    Importer les données
-</button>
-<script src="/static/app.js"></script>
+/static/app.jsscript>
 
 </body>
-</html>
