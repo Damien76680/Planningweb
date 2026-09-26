@@ -75,8 +75,7 @@ function loadTasks() {
         div.draggable = true;
         div.dataset.id = t.id;
 
-        div.innerHTML = `
-          div.innerHTML = `
+        div.innerHTML = 
   <span class="col-nom">${t.nom}</span>
   <span class="col-client">${t.client}</span>
   <span class="col-duree">${t.duree}h</span>
