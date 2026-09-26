@@ -53,93 +53,97 @@ console.log("USER =", USER);
 
 // ---------------- TASKS ----------------
 function loadTasks() {
-  fetch(`/api/tasks?user=${USER}`)
-    .then(r => r.json())
-    .then(data => {
 
-      const container = document.getElementById("tasks");
-      container.innerHTML = "";
+    fetch(`/api/tasks?user=${USER}`)
+        .then(r => r.json())
+        .then(data => {
 
-      if (!data || data.length === 0) {
-        container.innerHTML = "<p>⚠️ Aucune tâche</p>";
-        return;
-      }
+            const container =
+                document.getElementById("tasks");
 
-      data.forEach(t => {
+            container.innerHTML = "";
 
-        const div = document.createElement("div");
-        div.className = "task";
+            if (!data || data.length === 0) {
 
-        if (t.retard) div.className += " retard";
-        if (t.etat === "Terminé") div.className += " done";
-        div.draggable = true;
- 
-          div.innerHTML = `
-  <span class="col-nom">${t.nom}</span>
+                container.innerHTML =
+                    "<p>⚠️ Aucune tâche</p>";
 
-  <span class="col-client">${t.client}</span>
+                return;
+            }
 
-  <span class="col-duree">${t.duree}h</span>
+            data.forEach(t => {
 
-  <span class="col-debut">${t.debut}</span>
+                const div =
+                    document.createElement("div");
 
-  <span class="col-fin">${t.fin}</span>
+                div.className = "task";
 
-  <span class="col-deadline">${t.deadline}</span>
+                if (t.retard)
+                    div.className += " retard";
 
-  <span class="col-etat">
-    ${
-      t.etat === "Terminé"
-        ? "Fini"
-        : t.retard
-          ? "En retard"
-          : ""
-    }
-  </span>
+                if (t.etat === "Terminé")
+                    div.className += " done";
 
-  ${ATELIER ? "" : `
-    <span class="col-actions">
-      <button onclick="editTask(${t.id})">✏️</button>
-      <button onclick="finishTask(${t.id})">✅</button>
-      <button onclick="deleteTask(${t.id})">🗑️</button>
-    </span>
-  `}
-`;
+                div.draggable = true;
 
-  ${ATELIER ? "" : `
-    <span class="col-actions">
-      <button onclick="editTask(${t.id})">✏️</button>
-      <button onclick="finishTask(${t.id})">✅</button>
-      <button onclick="deleteTask(${t.id})">🗑️</button>
-    </span>
-  `}
-`;
-          <span class="col-etat">
-  ${
-    t.etat === "Terminé"
-      ? "✅ Fini"
-      : t.retard
-        ? "⚠️ Retard"
-        : ""
-  }
-</span>
+                div.dataset.id = t.id;
 
-          ${ATELIER ? "" : `
-    <span class="col-actions">
-    <button onclick="editTask(${t.id})">✏️</button>
-    <button onclick="finishTask(${t.id})">✅</button>
-    <button onclick="deleteTask(${t.id})">🗑</button>
-</span>
-`}
-        `;
+                div.innerHTML = `
+                    <span class="col-nom">
+                        ${t.nom}
+                    </span>
 
-        container.appendChild(div);
-      });
+                    <span class="col-client">
+                        ${t.client}
+                    </span>
 
-      enableDrag();
-    });
+                    <span class="col-duree">
+                        ${t.duree}h
+                    </span>
+
+                    <span class="col-debut">
+                        ${t.debut}
+                    </span>
+
+                    <span class="col-fin">
+                        ${t.fin}
+                    </span>
+
+                    <span class="col-deadline">
+                        ${t.deadline}
+                    </span>
+
+                    <span class="col-etat">
+                        ${
+                            t.etat === "Terminé"
+                                ? "Fini"
+                                : t.retard
+                                    ? "En retard"
+                                    : ""
+                        }
+                    </span>
+
+                    ${
+                        ATELIER
+                        ? ""
+                        : `
+                        <span class="col-actions">
+                            <button onclick="editTask(${t.id})">✏️</button>
+                            <button onclick="finishTask(${t.id})">✅</button>
+                            <button onclick="deleteTask(${t.id})">🗑️</button>
+                        </span>
+                        `
+                    }
+                `;
+
+                container.appendChild(div);
+
+            });
+
+            enableDrag();
+
+        });
 }
-
 
 // ---------------- ADD TASK ----------------
 function addTask() {
