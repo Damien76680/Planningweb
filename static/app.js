@@ -452,9 +452,7 @@ function exportData() {
 
             a.download =
                 "planning_backup_" +
-                new Date()
-                    .toISOString()
-                    .slice(0, 10) +
+                new Date().toISOString().slice(0, 10) +
                 ".json";
 
             document.body.appendChild(a);
@@ -465,9 +463,17 @@ function exportData() {
 
             window.URL.revokeObjectURL(url);
 
+            alert("Sauvegarde téléchargée");
         })
-        .catch(
+        .catch(error => {
 
+            console.error(error);
+
+            alert("Erreur lors de l'export");
+
+        });
+
+}
 
 // ---------------- IMPORT ----------------
 
