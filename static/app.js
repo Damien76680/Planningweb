@@ -519,3 +519,16 @@ function importData() {
     reader.readAsText(file);
 
 }
+function toggleAdmin() {
+
+    const panel =
+        document.getElementById("adminPanel");
+
+    if (
+        panel.style.display === "none"
+    ) {
+        panel.style.display = "block";
+    } else {
+        panel.style.display = "none";
+    }
+}
