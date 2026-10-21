@@ -21,6 +21,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const title = document.getElementById("planningTitle");
 
+
+    if (CHARGE_AFFAIRE) {
+
+    title.innerText =
+        "Vue Chargés d'Affaire";
+
+}
+else if (ATELIER) {
+    
     if (ATELIER) {
 
         const admin = document.getElementById("adminPanel");
