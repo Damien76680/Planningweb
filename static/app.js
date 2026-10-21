@@ -828,8 +828,10 @@ function loadChargeAffaire(){
                         html += `
                             <div style="
                                 margin-left:25px;
-                                margin-bottom:8px;
-                                padding:8px;
+                                padding:4px 8px;
+                                margin-bottom:2px;
+                                font-size:13px;
+                                line-height:1.2;
                                 border:1px solid #ddd;
                                 background:white;
                             ">
