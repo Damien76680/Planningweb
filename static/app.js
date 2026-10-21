@@ -1,3 +1,11 @@
+const CHARGES_AFFAIRE = [
+    "Damien",
+    "Samuel",
+    "Quentin",
+    "Georges",
+    "Sylvain"
+];
+
 const USER =
     new URLSearchParams(window.location.search)
     .get("user") || "stephane";
@@ -215,10 +223,20 @@ function editTask(id){
       const t = tasks.find(x => x.id === id);
 
       const nom = prompt("Nom :", t.nom);
-      const charge_affaire = prompt(
-    "Chargé d'affaire :",
-    t.charge_affaire || ""
+let options = CHARGES_AFFAIRE.map((nom, i) =>
+    `${i + 1} : ${nom}`
+).join("\n");
+
+let choix = prompt(
+    "Choisir le chargé d'affaire :\n\n" + options,
+    CHARGES_AFFAIRE.indexOf(t.charge_affaire) + 1
 );
+
+if (choix === null) return;
+
+const charge_affaire =
+    CHARGES_AFFAIRE[parseInt(choix) - 1] ||
+    t.charge_affaire;
       const client = prompt("Client :", t.client);
       const duree = prompt("Durée :", t.duree);
       const deadline = prompt("Deadline (JJMMAAAA) :", "");
