@@ -512,6 +512,27 @@ def atelier():
         })
 
     return jsonify(result)
+
+
+@app.route("/api/charge_affaire")
+def charge_affaire():
+
+    result = []
+
+    tasks = Task.query.order_by(Task.user, Task.ordre).all()
+
+    for t in tasks:
+
+        result.append({
+            "planning": t.user,
+            "charge_affaire": t.charge_affaire or "-",
+            "nom": t.nom or "-",
+            "client": t.client or "-",
+            "etat": t.etat
+        })
+
+    return jsonify(result)
+
 # ---------------- EXPORT ----------------
 @app.route("/api/export")
 def export_data():
