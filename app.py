@@ -20,6 +20,18 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+    
+    with app.app_context():
+    try:
+        db.session.execute(
+            db.text(
+                "ALTER TABLE task ADD COLUMN charge_affaire VARCHAR(50)"
+            )
+        )
+        db.session.commit()
+        print("COLONNE charge_affaire créée")
+    except Exception as e:
+        print("INFO:", e)
 
 
 # ---------------- TIME ----------------
