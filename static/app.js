@@ -774,13 +774,74 @@ function loadChargeAffaire(){
                     "chargeAffaireView"
                 );
 
-            div.innerHTML =
-                "<pre>" +
-                JSON.stringify(
-                    data,
-                    null,
-                    2
-                ) +
-                "</pre>";
+            let html = "";
+
+            const groupes = {};
+
+            data.forEach(t => {
+
+                const charge =
+                    t.charge_affaire || "-";
+
+                if (!groupes[charge]) {
+                    groupes[charge] = {};
+                }
+
+                if (!groupes[charge][t.planning]) {
+                    groupes[charge][t.planning] = [];
+                }
+
+                groupes[charge][t.planning].push(t);
+            });
+
+            Object.keys(groupes)
+            .sort()
+            .forEach(charge => {
+
+                html += `
+                    <h2 style="
+                        background:#003366;
+                        color:white;
+                        padding:10px;
+                        margin-top:20px;
+                    ">
+                        📁 ${charge}
+                    </h2>
+                `;
+
+                Object.keys(groupes[charge])
+                .sort()
+                .forEach(planning => {
+
+                    html += `
+                        <h3 style="
+                            padding-left:15px;
+                            margin-top:15px;
+                        ">
+                            👤 ${planning}
+                        </h3>
+                    `;
+
+                    groupes[charge][planning]
+                    .forEach(t => {
+
+                        html += `
+                            <div style="
+                                margin-left:25px;
+                                margin-bottom:8px;
+                                padding:8px;
+                                border:1px solid #ddd;
+                                background:white;
+                            ">
+                                <b>${t.nom}</b><br>
+                                Client : ${t.client}<br>
+                                Etat : ${t.etat}
+                            </div>
+                        `;
+                    });
+                });
+            });
+
+            div.innerHTML = html;
         });
 }
