@@ -249,36 +249,42 @@ def get_tasks():
             while start.strftime("%Y-%m-%d") in holidays:
                 start += timedelta(days=1)
 
-            end = calculate_planning(start, duration, work_hours, holidays)
+            end = calculate_planning(
+                start,
+                duration,
+                work_hours,
+                holidays
+            )
 
-            # ✅ FIX TIMEZONE
             end_naive = end.replace(tzinfo=None)
 
-            # deadline
             deadline_display = "-"
             deadline_date = None
 
             if t.deadline:
                 try:
-                    deadline_date = datetime.fromisoformat(str(t.deadline)).replace(tzinfo=None)
+                    deadline_date = datetime.fromisoformat(
+                        str(t.deadline)
+                    ).replace(tzinfo=None)
+
                     deadline_display = deadline_date.strftime("%d/%m")
+
                 except:
                     pass
 
-            # ✅ retard
             retard = False
-jours_retard = 0
+            jours_retard = 0
 
-if deadline_date and t.etat != "Terminé":
+            if deadline_date and t.etat != "Terminé":
 
-    if end_naive > deadline_date:
+                if end_naive > deadline_date:
 
-        retard = True
+                    retard = True
 
-        jours_retard = (
-            end_naive.date() -
-            deadline_date.date()
-        ).days
+                    jours_retard = (
+                        end_naive.date()
+                        - deadline_date.date()
+                    ).days
 
             result.append({
                 "id": t.id,
@@ -290,8 +296,8 @@ if deadline_date and t.etat != "Terminé":
                 "debut": start.strftime("%d/%m %H:%M"),
                 "fin": end.strftime("%d/%m %H:%M"),
                 "deadline": deadline_display,
-                "retard": retard
-                "jours_retard": jours_retard,
+                "retard": retard,
+                "jours_retard": jours_retard
             })
 
             if t.etat != "Terminé":
@@ -299,10 +305,10 @@ if deadline_date and t.etat != "Terminé":
 
         return jsonify(result)
 
+
     except Exception as e:
         print("ERREUR TASKS:", e)
         return jsonify([])
-
 
 # ---------------- ADD TASK ----------------
 @app.route("/api/tasks", methods=["POST"])
