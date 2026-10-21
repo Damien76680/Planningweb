@@ -5,6 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
+    <div id="editModal" class="modal">
+
+    <div class="modal-content">
+
+        <h2>Modifier la tâche</h2>
+
+        <input id="edit_nom" placeholder="Nom">
+
+        <input id="edit_client" placeholder="Client">
+
+        <select id="edit_charge_affaire">
+            <option value="">-- Chargé d'affaire --</option>
+            <option value="Damien">Damien</option>
+            <option value="Stéphane">Stéphane</option>
+            <option value="Kevin">Kevin</option>
+            <option value="Fabien">Fabien</option>
+        </select>
+
+        <input id="edit_duree" type="number" step="0.5">
+
+        <input
+            id="edit_deadline"
+            placeholder="JJMMAAAA"
+        >
+
+        <div class="modal-buttons">
+
+            <button onclick="closeModal()">
+                Annuler
+            </button>
+
+            <button onclick="saveEdit()">
+                Sauvegarder
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+    
+    
     body {
       font-family: Arial;
       margin: 10px;
