@@ -8,6 +8,7 @@ class Task(db.Model):
 
     user = db.Column(db.String(50), index=True)  # ✅ AJOUT
 
+    charge_affaire = db.Column(db.String(50))
     nom = db.Column(db.String(200))
     client = db.Column(db.String(200))
     duree = db.Column(db.Float)
