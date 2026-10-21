@@ -413,6 +413,7 @@ if (ATELIER) {
 
     loadTasks();
     loadHolidays();
+    loadSettings();
 }
 
 // Rafraîchissement automatique toutes les 5 secondes
@@ -517,6 +518,124 @@ function importData() {
     };
 
     reader.readAsText(file);
+
+}
+
+function loadSettings() {
+
+    fetch(`/api/settings?user=${USER}`)
+        .then(r => r.json())
+        .then(data => {
+
+            const h = data.work_hours;
+
+            if (!h) return;
+
+            if (h.mon?.[0]) {
+                document.getElementById("mon1_start").value = h.mon[0][0];
+                document.getElementById("mon1_end").value = h.mon[0][1];
+            }
+
+            if (h.mon?.[1]) {
+                document.getElementById("mon2_start").value = h.mon[1][0];
+                document.getElementById("mon2_end").value = h.mon[1][1];
+            }
+
+            if (h.tue?.[0]) {
+                document.getElementById("tue1_start").value = h.tue[0][0];
+                document.getElementById("tue1_end").value = h.tue[0][1];
+            }
+
+            if (h.tue?.[1]) {
+                document.getElementById("tue2_start").value = h.tue[1][0];
+                document.getElementById("tue2_end").value = h.tue[1][1];
+            }
+
+            if (h.wed?.[0]) {
+                document.getElementById("wed1_start").value = h.wed[0][0];
+                document.getElementById("wed1_end").value = h.wed[0][1];
+            }
+
+            if (h.wed?.[1]) {
+                document.getElementById("wed2_start").value = h.wed[1][0];
+                document.getElementById("wed2_end").value = h.wed[1][1];
+            }
+
+            if (h.thu?.[0]) {
+                document.getElementById("thu1_start").value = h.thu[0][0];
+                document.getElementById("thu1_end").value = h.thu[0][1];
+            }
+
+            if (h.thu?.[1]) {
+                document.getElementById("thu2_start").value = h.thu[1][0];
+                document.getElementById("thu2_end").value = h.thu[1][1];
+            }
+
+            if (h.fri?.[0]) {
+                document.getElementById("fri1_start").value = h.fri[0][0];
+                document.getElementById("fri1_end").value = h.fri[0][1];
+            }
+
+        });
+
+}
+
+
+
+function saveSettings() {
+
+    const work_hours = {
+
+        mon: [
+            [document.getElementById("mon1_start").value,
+             document.getElementById("mon1_end").value],
+            [document.getElementById("mon2_start").value,
+             document.getElementById("mon2_end").value]
+        ],
+
+        tue: [
+            [document.getElementById("tue1_start").value,
+             document.getElementById("tue1_end").value],
+            [document.getElementById("tue2_start").value,
+             document.getElementById("tue2_end").value]
+        ],
+
+        wed: [
+            [document.getElementById("wed1_start").value,
+             document.getElementById("wed1_end").value],
+            [document.getElementById("wed2_start").value,
+             document.getElementById("wed2_end").value]
+        ],
+
+        thu: [
+            [document.getElementById("thu1_start").value,
+             document.getElementById("thu1_end").value],
+            [document.getElementById("thu2_start").value,
+             document.getElementById("thu2_end").value]
+        ],
+
+        fri: [
+            [document.getElementById("fri1_start").value,
+             document.getElementById("fri1_end").value]
+        ],
+
+        sat: [],
+        sun: []
+    };
+
+    fetch(`/api/settings?user=${USER}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            work_hours: work_hours
+        })
+    })
+    .then(() => {
+        alert("Horaires sauvegardés");
+        loadTasks();
+    });
 
 }
 function toggleAdmin() {
