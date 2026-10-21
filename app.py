@@ -309,12 +309,13 @@ def add_task():
                 pass
 
         task = Task(
-            user=data.get("user"),
-            nom=data.get("nom"),
-            client=data.get("client"),
-            duree=float(data.get("duree", 1)),
-            deadline=deadline,
-            etat="À faire",
+          user=data.get("user"),
+          charge_affaire=data.get("charge_affaire"),
+          nom=data.get("nom"),
+          client=data.get("client"),
+          duree=float(data.get("duree", 1)),
+          deadline=deadline,
+          etat="À faire",
             ordre=(
                 db.session.query(db.func.max(Task.ordre))
                 .filter(Task.user == data.get("user"))
