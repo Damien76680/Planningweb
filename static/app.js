@@ -156,14 +156,14 @@ function loadTasks() {
                     </span>
 
                     <span class="col-etat">
-                        ${
-                            t.etat === "Terminé"
-                                ? "Fini"
-                                : t.retard
-                                    ? "En retard"
-                                    : ""
-                        }
-                    </span>
+    ${
+        t.etat === "Terminé"
+            ? "Fini"
+            : t.retard
+                ? `⚠️ ${t.jours_retard} j`
+                : ""
+    }
+</span>
 
                     ${
                         ATELIER
