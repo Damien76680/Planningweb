@@ -617,12 +617,19 @@ def charge_affaire():
                         - deadline_date.date()
                     ).days
 
+            # ignorer les tâches sans chargé d'affaire
+            if (
+                not t.charge_affaire
+                or t.charge_affaire.strip() in ["", "-"]
+            ):
+                continue
+
             result.append({
 
                 "planning": user_name,
 
                 "charge_affaire":
-                    t.charge_affaire or "-",
+                    t.charge_affaire,
 
                 "nom":
                     t.nom or "-",
@@ -645,6 +652,7 @@ def charge_affaire():
                 "jours_retard":
                     jours_retard
             })
+
 
             if t.etat != "Terminé":
                 current = end
