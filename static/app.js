@@ -216,36 +216,98 @@ function addTask() {
 
 
 // ---------------- EDIT ----------------
+let currentEditId = null;
+
 function editTask(id){
-  fetch(`/api/tasks?user=${USER}`)
-    .then(r=>r.json())
-    .then(tasks=>{
-      const t = tasks.find(x => x.id === id);
 
-      const nom = prompt("Nom :", t.nom);
-      const client = prompt("Client :", t.client);
-        let options = CHARGES_AFFAIRE.map((nom, i) =>
-    `${i + 1} : ${nom}`
-).join("\n");
+    fetch(`/api/tasks?user=${USER}`)
+        .then(r => r.json())
+        .then(tasks => {
 
-let choix = prompt(
-    "Choisir le chargé d'affaire :\n\n" + options,
-    CHARGES_AFFAIRE.indexOf(t.charge_affaire) + 1
-);
+            const t = tasks.find(
+                x => x.id === id
+            );
 
-if (choix === null) return;
+            currentEditId = id;
 
-const charge_affaire =
-    CHARGES_AFFAIRE[parseInt(choix) - 1] ||
-    t.charge_affaire;
-      const duree = prompt("Durée :", t.duree);
-      const deadline = prompt("Deadline (JJMMAAAA) :", "");
+            document.getElementById(
+                "edit_nom"
+            ).value = t.nom || "";
 
-      fetch(`/api/tasks/${id}/edit`, {
+            document.getElementById(
+                "edit_client"
+            ).value = t.client || "";
+
+            document.getElementById(
+                "edit_charge_affaire"
+            ).value = t.charge_affaire || "";
+
+            document.getElementById(
+                "edit_duree"
+            ).value = t.duree || "";
+
+            document.getElementById(
+                "edit_deadline"
+            ).value = "";
+
+            document.getElementById(
+                "editModal"
+            ).style.display = "block";
+        });
+}
+
+function closeModal(){
+
+    document.getElementById(
+        "editModal"
+    ).style.display = "none";
+}
+
+function saveEdit(){
+
+    const nom =
+        document.getElementById(
+            "edit_nom"
+        ).value;
+
+    const client =
+        document.getElementById(
+            "edit_client"
+        ).value;
+
+    const charge_affaire =
+        document.getElementById(
+            "edit_charge_affaire"
+        ).value;
+
+    const duree =
+        document.getElementById(
+            "edit_duree"
+        ).value;
+
+    const deadline =
+        document.getElementById(
+            "edit_deadline"
+        ).value;
+
+    fetch(`/api/tasks/${currentEditId}/edit`, {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({nom, charge_affaire, client, duree, deadline})
-      }).then(loadTasks);
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+            nom,
+            client,
+            charge_affaire,
+            duree,
+            deadline
+        })
+    })
+    .then(() => {
+
+        closeModal();
+
+        loadTasks();
     });
 }
 
