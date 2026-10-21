@@ -178,6 +178,8 @@ function loadTasks() {
 // ---------------- ADD TASK ----------------
 function addTask() {
   const nom = document.getElementById("nom").value;
+  const charge_affaire =
+    document.getElementById("charge_affaire").value;
   const client = document.getElementById("client").value;
   const duree = parseFloat(document.getElementById("duree").value);
   let dl = document.getElementById("deadline").value;
