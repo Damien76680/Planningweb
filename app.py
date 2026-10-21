@@ -274,6 +274,7 @@ def get_tasks():
             result.append({
                 "id": t.id,
                 "nom": t.nom or "-",
+                "charge_affaire": t.charge_affaire or "-",
                 "client": t.client or "-",
                 "etat": t.etat,
                 "duree": t.duree,
@@ -501,6 +502,7 @@ def export_data():
             "tasks": [
                 {
                     "user": t.user,
+                    "charge_affaire": t.charge_affaire,
                     "nom": t.nom,
                     "client": t.client,
                     "duree": t.duree,
@@ -567,6 +569,7 @@ def import_data():
 
         db.session.add(Task(
             user=t.get("user"),
+            charge_affaire=t.get("charge_affaire"),
             nom=t.get("nom"),
             client=t.get("client"),
             duree=t.get("duree"),
