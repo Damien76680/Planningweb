@@ -530,11 +530,21 @@ window.addEventListener("DOMContentLoaded", () => {
 // Rafraîchissement automatique toutes les 5 secondes
 setInterval(() => {
 
-    if (ATELIER) {
+    if (CHARGE_AFFAIRE) {
+
+        loadChargeAffaire();
+
+    }
+    else if (ATELIER) {
+
         loadAtelier();
-    } else {
+
+    }
+    else {
+
         loadTasks();
         loadHolidays();
+
     }
 
 }, 5000);
