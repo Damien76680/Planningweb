@@ -223,7 +223,8 @@ function editTask(id){
       const t = tasks.find(x => x.id === id);
 
       const nom = prompt("Nom :", t.nom);
-let options = CHARGES_AFFAIRE.map((nom, i) =>
+      const client = prompt("Client :", t.client);
+        let options = CHARGES_AFFAIRE.map((nom, i) =>
     `${i + 1} : ${nom}`
 ).join("\n");
 
@@ -237,7 +238,6 @@ if (choix === null) return;
 const charge_affaire =
     CHARGES_AFFAIRE[parseInt(choix) - 1] ||
     t.charge_affaire;
-      const client = prompt("Client :", t.client);
       const duree = prompt("Durée :", t.duree);
       const deadline = prompt("Deadline (JJMMAAAA) :", "");
 
