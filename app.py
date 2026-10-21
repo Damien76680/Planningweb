@@ -519,17 +519,135 @@ def charge_affaire():
 
     result = []
 
-    tasks = Task.query.order_by(Task.user, Task.ordre).all()
+    users = db.session.query(Task.user).distinct().all()
 
-    for t in tasks:
+    for u in users:
 
-        result.append({
-            "planning": t.user,
-            "charge_affaire": t.charge_affaire or "-",
-            "nom": t.nom or "-",
-            "client": t.client or "-",
-            "etat": t.etat
-        })
+        user_name = u[0]
+
+        tasks = (
+            Task.query
+            .filter_by(user=user_name)
+            .order_by(Task.ordre)
+            .all()
+        )
+
+        holidays = [
+            h.date
+            for h in Holiday.query.filter_by(
+                user=user_name
+            ).all()
+        ]
+
+        work_hours = {
+            "mon": [["07:30","12:30"],["13:30","16:00"]],
+            "tue": [["07:30","12:30"],["13:30","16:00"]],
+            "wed": [["07:30","12:30"],["13:30","16:00"]],
+            "thu": [["07:30","12:30"],["13:30","16:00"]],
+            "fri": [["07:30","12:30"]],
+            "sat": [],
+            "sun": []
+        }
+
+        settings = Settings.query.filter_by(
+            user=user_name
+        ).first()
+
+        if settings and settings.data:
+            try:
+                s = json.loads(settings.data)
+
+                if "work_hours" in s:
+                    work_hours = s["work_hours"]
+
+            except:
+                pass
+
+        current = now()
+
+        for t in tasks:
+
+            duration = (
+                0
+                if t.etat == "Terminé"
+                else float(t.duree or 0)
+            )
+
+            start = current
+
+            while start.strftime("%Y-%m-%d") in holidays:
+                start += timedelta(days=1)
+
+            end = calculate_planning(
+                start,
+                duration,
+                work_hours,
+                holidays
+            )
+
+            end_naive = end.replace(tzinfo=None)
+
+            deadline_display = "-"
+            deadline_date = None
+
+            if t.deadline:
+                try:
+                    deadline_date = datetime.fromisoformat(
+                        str(t.deadline)
+                    ).replace(tzinfo=None)
+
+                    deadline_display = (
+                        deadline_date.strftime("%d/%m")
+                    )
+
+                except:
+                    pass
+
+            retard = False
+            jours_retard = 0
+
+            if deadline_date and t.etat != "Terminé":
+
+                if end_naive > deadline_date:
+
+                    retard = True
+
+                    jours_retard = (
+                        end_naive.date()
+                        - deadline_date.date()
+                    ).days
+
+            result.append({
+
+                "planning": user_name,
+
+                "charge_affaire":
+                    t.charge_affaire or "-",
+
+                "nom":
+                    t.nom or "-",
+
+                "client":
+                    t.client or "-",
+
+                "etat":
+                    t.etat,
+
+                "fin":
+                    end.strftime("%d/%m"),
+
+                "deadline":
+                    deadline_display,
+
+                "retard":
+                    retard,
+
+                "jours_retard":
+                    jours_retard
+            })
+
+            if t.etat != "Terminé":
+                current = end
 
     return jsonify(result)
 
