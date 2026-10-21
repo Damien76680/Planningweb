@@ -795,61 +795,87 @@ function loadChargeAffaire(){
             });
 
             Object.keys(groupes)
-            .sort()
-            .forEach(charge => {
-
-                html += `
-                    <h2 style="
-                        background:#003366;
-                        color:white;
-                        padding:10px;
-                        margin-top:20px;
-                    ">
-                        📁 ${charge}
-                    </h2>
-                `;
-
-                Object.keys(groupes[charge])
                 .sort()
-                .forEach(planning => {
+                .forEach(charge => {
 
                     html += `
-                        <h3 style="
-                            padding-left:15px;
+                        <div style="
+                            background:#003366;
+                            color:white;
+                            padding:8px 12px;
                             margin-top:15px;
+                            font-size:20px;
+                            font-weight:bold;
+                            border-radius:5px;
                         ">
-                            👤 ${planning}
-                        </h3>
+                            📁 ${charge}
+                        </div>
                     `;
 
-                    groupes[charge][planning]
-                    .forEach(t => {
+                    Object.keys(groupes[charge])
+                        .sort()
+                        .forEach(planning => {
 
-                       html += `
-                           <div style="
-                           margin-left:20px;
-                           margin-bottom:2px;
-                           padding:4px 8px;
-                           border:1px solid #ddd;
-                           background:${color};
-                           font-size:13px;
-                            ">
-                         <b>${t.nom}</b>
-                        | ${t.client}
-                         | Deadline : ${t.deadline || "-"}
-                        | ${
-                           t.etat === "Terminé"
-                         ? "✅ Terminé"
-                         : t.retard
-                       ? `🔴 ${t.jours_retard} j`
-                         : "🟢 OK"
-                              }
-                            </div>
-                       `;
-                    });
+                            html += `
+                                <div style="
+                                    padding:6px 10px;
+                                    margin-top:8px;
+                                    font-weight:bold;
+                                    font-size:15px;
+                                    background:#f0f0f0;
+                                    border-left:4px solid #003366;
+                                ">
+                                    👤 ${planning}
+                                </div>
+                            `;
+
+                            groupes[charge][planning]
+                                .forEach(t => {
+
+                                    let color = "#ffffff";
+
+                                    if (t.retard) {
+                                        color = "#ffe5e5";
+                                    }
+
+                                    if (t.etat === "Terminé") {
+                                        color = "#d4ffd4";
+                                    }
+
+                                    html += `
+                                        <div style="
+                                            margin-left:15px;
+                                            margin-bottom:2px;
+                                            padding:4px 8px;
+                                            border:1px solid #ddd;
+                                            background:${color};
+                                            font-size:13px;
+                                            line-height:1.2;
+                                        ">
+
+                                            <b>${t.nom}</b>
+
+                                            | ${t.client}
+
+                                            | Deadline :
+                                            ${t.deadline || "-"}
+
+                                            |
+
+                                            ${
+                                                t.etat === "Terminé"
+                                                ? "✅ Terminé"
+                                                : t.retard
+                                                    ? `🔴 ${t.jours_retard} j`
+                                                    : "🟢 OK"
+                                            }
+
+                                        </div>
+                                    `;
+                                });
+                        });
+
                 });
-            });
-
             div.innerHTML = html;
         });
 }
