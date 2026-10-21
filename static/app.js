@@ -250,8 +250,11 @@ function editTask(id){
             ).value = t.duree || "";
 
             document.getElementById(
-                "edit_deadline"
-            ).value = "";
+    "edit_deadline"
+).value =
+    t.deadline && t.deadline !== "-"
+        ? t.deadline.replace("/", "").replace("/", "")
+        : "";
 
             document.getElementById(
                 "editModal"
