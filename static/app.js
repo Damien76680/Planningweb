@@ -239,8 +239,11 @@ function editTask(id){
             ).value = t.client || "";
 
             document.getElementById(
-                "edit_charge_affaire"
-            ).value = t.charge_affaire || "";
+    "edit_charge_affaire"
+).value =
+    CHARGES_AFFAIRE.includes(t.charge_affaire)
+        ? t.charge_affaire
+        : "";
 
             document.getElementById(
                 "edit_duree"
