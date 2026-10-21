@@ -19,27 +19,28 @@ const ATELIER =
     .get("vue") === "atelier";
 window.addEventListener("DOMContentLoaded", () => {
 
-    const title = document.getElementById("planningTitle");
-
+    const title =
+        document.getElementById("planningTitle");
 
     if (CHARGE_AFFAIRE) {
 
-    title.innerText =
-        "Vue Chargés d'Affaire";
+        if (title) {
+            title.innerText =
+                "Vue Chargés d'Affaire";
+        }
 
-}
-else if (ATELIER) {
-    
-    if (ATELIER) {
+    } else if (ATELIER) {
 
-        const admin = document.getElementById("adminPanel");
+        const admin =
+            document.getElementById("adminPanel");
 
         if (admin) {
             admin.style.display = "none";
         }
 
         if (title) {
-            title.innerText = "Planning Atelier";
+            title.innerText =
+                "Planning Atelier";
         }
 
     } else {
@@ -50,23 +51,9 @@ else if (ATELIER) {
                 USER.charAt(0).toUpperCase() +
                 USER.slice(1);
         }
-
     }
-
 });
 
-if (ATELIER) {
-
-    document.getElementById("tasks").style.display = "none";
-
-    const header = document.querySelector(".header");
-    if (header) {
-        header.style.display = "none";
-    }
-
-    loadAtelier();
-
-}
 
 console.log("USER =", USER);
 
@@ -514,28 +501,31 @@ function loadAtelier(){
 
 
 // ---------------- INIT ----------------
-if (CHARGE_AFFAIRE) {
+window.addEventListener("DOMContentLoaded", () => {
 
-    document.getElementById("tasks").style.display =
-        "none";
+    if (CHARGE_AFFAIRE) {
 
-    loadChargeAffaire();
+        document.getElementById("tasks").style.display =
+            "none";
 
-}
-else if (ATELIER) {
+        loadChargeAffaire();
 
-    document.getElementById("tasks").style.display =
-        "none";
+    }
+    else if (ATELIER) {
 
-    loadAtelier();
+        document.getElementById("tasks").style.display =
+            "none";
 
-}
-else {
+        loadAtelier();
 
-    loadTasks();
-    loadHolidays();
-    loadSettings();
-}
+    }
+    else {
+
+        loadTasks();
+        loadHolidays();
+        loadSettings();
+    }
+});
 
 // Rafraîchissement automatique toutes les 5 secondes
 setInterval(() => {
