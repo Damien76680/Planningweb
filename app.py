@@ -342,6 +342,10 @@ def edit_task(id):
 
     t.nom = data.get("nom")
     t.client = data.get("client")
+    t.charge_affaire = data.get(
+    "charge_affaire",
+    t.charge_affaire
+)
     t.duree = float(data.get("duree", t.duree))
 
     if data.get("deadline") and len(data["deadline"]) == 8:
