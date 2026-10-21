@@ -772,3 +772,25 @@ function toggleAdmin() {
         panel.style.display = "none";
     }
 }
+
+function loadChargeAffaire(){
+
+    fetch("/api/charge_affaire")
+        .then(r => r.json())
+        .then(data => {
+
+            const div =
+                document.getElementById(
+                    "chargeAffaireView"
+                );
+
+            div.innerHTML =
+                "<pre>" +
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                ) +
+                "</pre>";
+        });
+}
