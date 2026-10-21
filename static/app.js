@@ -825,21 +825,27 @@ function loadChargeAffaire(){
                     groupes[charge][planning]
                     .forEach(t => {
 
-                        html += `
-                            <div style="
-                                margin-left:25px;
-                                padding:4px 8px;
-                                margin-bottom:2px;
-                                font-size:13px;
-                                line-height:1.2;
-                                border:1px solid #ddd;
-                                background:white;
+                       html += `
+                           <div style="
+                           margin-left:20px;
+                           margin-bottom:2px;
+                           padding:4px 8px;
+                           border:1px solid #ddd;
+                           background:${color};
+                           font-size:13px;
                             ">
-                                <b>${t.nom}</b><br>
-                                Client : ${t.client}<br>
-                                Etat : ${t.etat}
+                         <b>${t.nom}</b>
+                        | ${t.client}
+                         | Deadline : ${t.deadline || "-"}
+                        | ${
+                           t.etat === "Terminé"
+                         ? "✅ Terminé"
+                         : t.retard
+                       ? `🔴 ${t.jours_retard} j`
+                         : "🟢 OK"
+                              }
                             </div>
-                        `;
+                       `;
                     });
                 });
             });
