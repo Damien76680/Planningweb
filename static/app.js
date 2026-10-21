@@ -195,6 +195,7 @@ function addTask() {
     user: USER,
     nom,
     client,
+    charge_affaire,
     duree,
     deadline: dl
 })
