@@ -857,8 +857,8 @@ function loadChargeAffaire(){
 
                                             | ${t.client}
 
-                                            | Deadline :
-                                            ${t.deadline || "-"}
+                                            | Fin : ${t.fin}
+                                            | Deadline : ${t.deadline || "-"}
 
                                             |
 
@@ -866,7 +866,7 @@ function loadChargeAffaire(){
                                                 t.etat === "Terminé"
                                                 ? "✅ Terminé"
                                                 : t.retard
-                                                    ? `🔴 ${t.jours_retard} j`
+                                                    ? `🔴 Retard ${t.jours_retard} j`
                                                     : "🟢 OK"
                                             }
 
