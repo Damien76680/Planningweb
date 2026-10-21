@@ -127,6 +127,10 @@ function loadTasks() {
                         ${t.client}
                     </span>
 
+                    <span class="col-charge">
+                        ${t.charge_affaire}
+                    </span>
+
                     <span class="col-duree">
                         ${t.duree}h
                     </span>
