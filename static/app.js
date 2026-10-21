@@ -215,6 +215,10 @@ function editTask(id){
       const t = tasks.find(x => x.id === id);
 
       const nom = prompt("Nom :", t.nom);
+      const charge_affaire = prompt(
+    "Chargé d'affaire :",
+    t.charge_affaire || ""
+);
       const client = prompt("Client :", t.client);
       const duree = prompt("Durée :", t.duree);
       const deadline = prompt("Deadline (JJMMAAAA) :", "");
@@ -222,7 +226,7 @@ function editTask(id){
       fetch(`/api/tasks/${id}/edit`, {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({nom, client, duree, deadline})
+        body: JSON.stringify({nom, charge_affaire, client, duree, deadline})
       }).then(loadTasks);
     });
 }
