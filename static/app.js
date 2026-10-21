@@ -514,13 +514,23 @@ function loadAtelier(){
 
 
 // ---------------- INIT ----------------
-if (ATELIER) {
+if (CHARGE_AFFAIRE) {
 
-    document.getElementById("tasks").style.display = "none";
+    document.getElementById("tasks").style.display =
+        "none";
+
+    loadChargeAffaire();
+
+}
+else if (ATELIER) {
+
+    document.getElementById("tasks").style.display =
+        "none";
 
     loadAtelier();
 
-} else {
+}
+else {
 
     loadTasks();
     loadHolidays();
