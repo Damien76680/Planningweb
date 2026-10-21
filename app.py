@@ -267,9 +267,18 @@ def get_tasks():
 
             # ✅ retard
             retard = False
-            if deadline_date and t.etat != "Terminé":
-                if end_naive > deadline_date:
-                    retard = True
+jours_retard = 0
+
+if deadline_date and t.etat != "Terminé":
+
+    if end_naive > deadline_date:
+
+        retard = True
+
+        jours_retard = (
+            end_naive.date() -
+            deadline_date.date()
+        ).days
 
             result.append({
                 "id": t.id,
@@ -282,6 +291,7 @@ def get_tasks():
                 "fin": end.strftime("%d/%m %H:%M"),
                 "deadline": deadline_display,
                 "retard": retard
+                "jours_retard": jours_retard,
             })
 
             if t.etat != "Terminé":
