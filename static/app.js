@@ -10,6 +10,10 @@ const USER =
     new URLSearchParams(window.location.search)
     .get("user") || "stephane";
 
+const CHARGE_AFFAIRE =
+    new URLSearchParams(window.location.search)
+    .get("vue") === "charge";
+
 const ATELIER =
     new URLSearchParams(window.location.search)
     .get("vue") === "atelier";
@@ -56,6 +60,7 @@ if (ATELIER) {
 }
 
 console.log("USER =", USER);
+
 
 
 
