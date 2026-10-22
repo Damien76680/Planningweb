@@ -429,62 +429,146 @@ function deleteHoliday(date){
     });
 }
 
-function loadAtelier(){
+function loadAtelier() {
 
     fetch("/api/atelier")
         .then(r => r.json())
         .then(data => {
 
-            const div =
-                document.getElementById("atelierView");
+            const div = document.getElementById("atelierView");
 
             let html = `
                 <div style="
                     display:flex;
-                    gap:15px;
+                    gap:20px;
                     align-items:flex-start;
                     overflow-x:auto;
+                    padding:10px;
                 ">
             `;
 
             data.forEach(user => {
 
+                const tasks = user.tasks.filter(
+                    t => t.etat !== "Terminé"
+                );
+
                 html += `
                     <div style="
-                        min-width:350px;
-                        border:1px solid #ccc;
-                        padding:10px;
-                        background:#f8f8f8;
+                        min-width:320px;
+                        max-width:320px;
+                        background:#f5f5f5;
+                        border-radius:10px;
+                        box-shadow:0 2px 8px rgba(0,0,0,0.15);
+                        overflow:hidden;
                     ">
-                        <h2>${user.user}</h2>
+
+                        <div style="
+                            background:#003366;
+                            color:white;
+                            padding:12px;
+                            text-align:center;
+                            font-size:22px;
+                            font-weight:bold;
+                        ">
+                            ${user.user}
+                        </div>
                 `;
 
-                user.tasks.forEach(t => {
-
-                    let color = "#ffffff";
-
-                    if (t.retard)
-                        color = "#ffe5e5";
-
-                    if (t.etat === "Terminé")
-                        color = "#d4ffd4";
+                if (tasks.length === 0) {
 
                     html += `
                         <div style="
-                            background:${color};
-                            border:1px solid #ddd;
-                            padding:6px;
-                            margin-bottom:5px;
+                            padding:30px;
+                            text-align:center;
+                            color:#777;
+                            font-size:18px;
                         ">
-                            <b>${t.nom}</b><br>
-                            Client : ${t.client}<br>
-                            Durée : ${t.duree} h<br>
-                            Début : ${t.debut}<br>
-                            Fin : ${t.fin}<br>
-                            Deadline : ${t.deadline}
+                            ✅ Aucune tâche
                         </div>
                     `;
-                });
+
+                } else {
+
+                    tasks.forEach((t, index) => {
+
+                        let color = "#ffffff";
+
+                        if (t.retard) {
+                            color = "#ffe5e5";
+                        }
+
+                        const prochaine = index === 0;
+
+                        html += `
+                            <div style="
+                                margin:10px;
+                                padding:${prochaine ? "15px" : "10px"};
+                                background:${color};
+                                border:${prochaine ? "3px solid #003366" : "1px solid #ddd"};
+                                border-radius:8px;
+                            ">
+                        `;
+
+                        if (prochaine) {
+
+                            html += `
+                                <div style="
+                                    background:#003366;
+                                    color:white;
+                                    text-align:center;
+                                    padding:6px;
+                                    margin-bottom:10px;
+                                    border-radius:5px;
+                                    font-weight:bold;
+                                ">
+                                    ▶ PROCHAINE TÂCHE
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                                <div style="
+                                    font-size:${prochaine ? "20px" : "16px"};
+                                    font-weight:bold;
+                                    margin-bottom:8px;
+                                ">
+                                    ${t.nom}
+                                </div>
+
+                                <div style="
+                                    font-size:14px;
+                                    margin-bottom:4px;
+                                ">
+                                    Client : ${t.client}
+                                </div>
+
+                                <div style="
+                                    font-size:14px;
+                                    margin-bottom:8px;
+                                ">
+                                    Chargé d'affaire : ${t.charge_affaire || "-"}
+                                </div>
+                        `;
+
+                        if (t.retard) {
+
+                            html += `
+                                <div style="
+                                    color:red;
+                                    font-weight:bold;
+                                    font-size:16px;
+                                ">
+                                    🔴 Retard ${t.jours_retard} jour(s)
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                            </div>
+                        `;
+                    });
+                }
 
                 html += `
                     </div>
