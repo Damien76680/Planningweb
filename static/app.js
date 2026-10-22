@@ -780,9 +780,7 @@ function loadChargeAffaire(){
         .then(data => {
 
             const div =
-                document.getElementById(
-                    "chargeAffaireView"
-                );
+                document.getElementById("chargeAffaireView");
 
             let html = "";
 
@@ -837,6 +835,21 @@ function loadChargeAffaire(){
                                 ">
                                     👤 ${planning}
                                 </div>
+
+                                <div style="
+                                    display:flex;
+                                    font-weight:bold;
+                                    background:#e8e8e8;
+                                    border:1px solid #ccc;
+                                    padding:6px;
+                                    font-size:13px;
+                                ">
+                                    <div style="width:350px;">Affaire</div>
+                                    <div style="width:180px;">Client</div>
+                                    <div style="width:120px;">Fin</div>
+                                    <div style="width:120px;">Deadline</div>
+                                    <div style="width:160px;">Statut</div>
+                                </div>
                             `;
 
                             groupes[charge][planning]
@@ -854,38 +867,54 @@ function loadChargeAffaire(){
 
                                     html += `
                                         <div style="
-                                            margin-left:15px;
-                                            margin-bottom:2px;
-                                            padding:4px 8px;
+                                            display:flex;
+                                            align-items:center;
+                                            margin-bottom:1px;
+                                            padding:6px;
                                             border:1px solid #ddd;
+                                            border-top:none;
                                             background:${color};
                                             font-size:13px;
-                                            line-height:1.2;
                                         ">
 
-                                            <b>${t.nom}</b>
+                                            <div style="
+                                                width:350px;
+                                                font-weight:bold;
+                                            ">
+                                                ${t.nom}
+                                            </div>
 
-                                            | ${t.client}
+                                            <div style="width:180px;">
+                                                ${t.client}
+                                            </div>
 
-                                            | Fin : ${t.fin}
-                                            | Deadline : ${t.deadline || "-"}
+                                            <div style="width:120px;">
+                                                ${t.fin}
+                                            </div>
 
-                                            |
+                                            <div style="width:120px;">
+                                                ${t.deadline || "-"}
+                                            </div>
 
-                                            ${
-                                                t.etat === "Terminé"
-                                                ? "✅ Terminé"
-                                                : t.retard
-                                                    ? `🔴 Retard ${t.jours_retard} j`
-                                                    : "🟢 OK"
-                                            }
+                                            <div style="
+                                                width:160px;
+                                                font-weight:bold;
+                                            ">
+                                                ${
+                                                    t.etat === "Terminé"
+                                                        ? "✅ Terminé"
+                                                        : t.retard
+                                                            ? `🔴 Retard ${t.jours_retard} j`
+                                                            : "🟢 OK"
+                                                }
+                                            </div>
 
                                         </div>
                                     `;
                                 });
                         });
-
                 });
+
             div.innerHTML = html;
         });
 }
