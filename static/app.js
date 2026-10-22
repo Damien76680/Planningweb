@@ -554,13 +554,12 @@ function loadAtelier() {
                         if (t.retard) {
 
                             html += `
-                                <div style="
+                               <div style="
                                     color:red;
-                                    font-weight:bold;
-                                    font-size:16px;
-                                ">
-                                    🔴 Retard ${t.jours_retard} jour(s)
-                                </div>
+                                     font-weight:bold;
+                               ">
+                                   🔴 Prioritaire
+                            </div>
                             `;
                         }
 
